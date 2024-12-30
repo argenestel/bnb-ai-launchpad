@@ -1,4 +1,3 @@
-//@ts-nocheck
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -6,21 +5,17 @@ import {
 	CardHeader,
 	CardTitle,
 	CardDescription,
+	CardContent,
 	CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import { Plus, Loader2, MessageCircle, Trash2, Edit } from "lucide-react";
+import { Plus, Loader2, MessageCircle, Trash2, Edit, Star } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import SplitInterface from "./SplitInterface";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Navbar from "@/components/Navbar";
+
 const CharacterDashboard = () => {
 	const [characters, setCharacters] = useState([]);
 	const [loading, setLoading] = useState(true);
@@ -50,11 +45,18 @@ const CharacterDashboard = () => {
 		await fetchCharacters();
 	};
 
+	const shortenAddress = (address) => {
+		return `${address.slice(0, 6)}...${address.slice(-4)}`;
+	};
+
+	// Get the character with the most interactions (using the first character for now)
+	const featuredCharacter = characters[0];
+
 	if (error) {
 		return (
-			<div className="container mx-auto py-8">
+			<div className="container mx-auto p-6">
 				<Alert variant="destructive">
-					<AlertDescription>Error: {error}</AlertDescription>
+					<AlertDescription>{error}</AlertDescription>
 				</Alert>
 				<Button onClick={fetchCharacters} className="mt-4">
 					Retry
@@ -64,97 +66,155 @@ const CharacterDashboard = () => {
 	}
 
 	return (
-		<div className="container mx-auto py-8 space-y-8">
-			<Navbar />
-			<div className="flex justify-between items-center">
-				<div>
-					<h1 className="text-3xl font-bold">Characters</h1>
-					<p className="text-muted-foreground">Manage your AI characters</p>
+		<div className="min-h-screen">
+			<div className="container mx-auto p-6 space-y-8">
+				<Navbar />
+				<div className="flex justify-between items-center">
+					<div>
+						<h1 className="text-3xl font-bold tracking-tight">Characters</h1>
+						<p className="text-muted-foreground">
+							Manage and interact with your AI characters
+						</p>
+					</div>
+					<Button onClick={() => navigate("/create")}>
+						<Plus className="mr-2 h-4 w-4" />
+						Create Character
+					</Button>
 				</div>
-				<Button
-					onClick={() => navigate("/create")}
-					className="flex items-center gap-2"
-				>
-					<Plus className="w-4 h-4" />
-					Create Character
-				</Button>
-			</div>
 
-			{loading ? (
-				<div className="flex items-center justify-center h-96">
-					<Loader2 className="w-8 h-8 animate-spin" />
-				</div>
-			) : characters.length === 0 ? (
-				<Card className="flex flex-col items-center justify-center h-96 text-center">
-					<CardHeader>
-						<CardTitle>No Characters Yet</CardTitle>
-						<CardDescription>
-							Get started by creating your first AI character
-						</CardDescription>
-					</CardHeader>
-					<CardFooter>
-						<Button onClick={() => navigate("/create")}>
-							Create Character
-						</Button>
-					</CardFooter>
-				</Card>
-			) : (
-				<div className="rounded-md border">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Name</TableHead>
-								<TableHead>Description</TableHead>
-								<TableHead>Model Provider</TableHead>
-								<TableHead>Voice Model</TableHead>
-								<TableHead className="text-right">Actions</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{characters.map((character) => (
-								<TableRow key={character.name}>
-									<TableCell className="font-medium">
-										{character.name}
-									</TableCell>
-									<TableCell className="max-w-md truncate">
-										{character.description}
-									</TableCell>
-									<TableCell>{character.modelProvider}</TableCell>
-									<TableCell>{character.settings?.voice?.model}</TableCell>
-									<TableCell className="text-right">
-										<div className="flex justify-end gap-2">
-											<Button
-												variant="outline"
-												size="icon"
-												onClick={() => navigate(`/chat/${character.name}`)}
-												title="Chat with character"
-											>
-												<MessageCircle className="w-4 h-4" />
-											</Button>
-											<Button
-												variant="outline"
-												size="icon"
-												onClick={() => navigate(`/edit/${character.name}`)}
-												title="Edit character"
-											>
-												<Edit className="w-4 h-4" />
-											</Button>
-											<Button
-												variant="outline"
-												size="icon"
-												onClick={() => handleDelete(character.name)}
-												title="Delete character"
-											>
-												<Trash2 className="w-4 h-4" />
-											</Button>
+				{loading ? (
+					<div className="flex items-center justify-center h-96">
+						<Loader2 className="h-8 w-8 animate-spin" />
+					</div>
+				) : characters.length === 0 ? (
+					<Card className="flex flex-col items-center justify-center h-96 text-center">
+						<CardHeader>
+							<CardTitle>No Characters Yet</CardTitle>
+							<CardDescription>
+								Get started by creating your first AI character
+							</CardDescription>
+						</CardHeader>
+						<CardFooter>
+							<Button onClick={() => navigate("/create")}>
+								Create Character
+							</Button>
+						</CardFooter>
+					</Card>
+				) : (
+					<>
+						{/* Featured Character Section */}
+						{featuredCharacter && (
+							<Card className="border-2">
+								<CardHeader>
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-4">
+											<Avatar className="h-20 w-20">
+												<AvatarImage
+													src={featuredCharacter.ipfs_url}
+													alt={featuredCharacter.name}
+												/>
+												<AvatarFallback>
+													{featuredCharacter.name[0]}
+												</AvatarFallback>
+											</Avatar>
+											<div className="space-y-1">
+												<div className="flex items-center space-x-2">
+													<Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+													<CardTitle>Featured Character</CardTitle>
+												</div>
+												<CardDescription>
+													Most interactive AI character
+												</CardDescription>
+											</div>
 										</div>
-									</TableCell>
-								</TableRow>
+										<Button
+											onClick={() =>
+												navigate(`/chat/${featuredCharacter.name}`)
+											}
+										>
+											<MessageCircle className="mr-2 h-4 w-4" />
+											Start Chat
+										</Button>
+									</div>
+								</CardHeader>
+								<CardContent>
+									<div className="space-y-4">
+										<div>
+											<h3 className="text-2xl font-semibold">
+												{featuredCharacter.name}
+											</h3>
+											<p className="text-muted-foreground mt-2">
+												{featuredCharacter.description}
+											</p>
+										</div>
+										<Badge variant="outline" className="font-mono">
+											{shortenAddress(featuredCharacter.evm_address)}
+										</Badge>
+									</div>
+								</CardContent>
+							</Card>
+						)}
+
+						<Separator className="my-8" />
+
+						{/* Character Grid */}
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+							{characters.slice(1).map((character) => (
+								<Card key={character.id} className="flex flex-col">
+									<CardHeader>
+										<div className="flex items-center space-x-4">
+											<Avatar>
+												<AvatarImage
+													src={character.ipfs_url}
+													alt={character.name}
+												/>
+												<AvatarFallback>{character.name[0]}</AvatarFallback>
+											</Avatar>
+											<div>
+												<CardTitle>{character.name}</CardTitle>
+												<CardDescription className="line-clamp-2">
+													{character.description}
+												</CardDescription>
+											</div>
+										</div>
+									</CardHeader>
+									<CardContent>
+										<Badge variant="outline" className="font-mono">
+											{shortenAddress(character.evm_address)}
+										</Badge>
+									</CardContent>
+									<CardFooter className="flex justify-end gap-2 mt-auto">
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => navigate(`/chat/${character.name}`)}
+											title="Chat with character"
+										>
+											<MessageCircle className="h-4 w-4" />
+										</Button>
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => navigate(`/edit/${character.name}`)}
+											title="Edit character"
+										>
+											<Edit className="h-4 w-4" />
+										</Button>
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => handleDelete(character.name)}
+											title="Delete character"
+										>
+											<Trash2 className="h-4 w-4" />
+										</Button>
+									</CardFooter>
+								</Card>
 							))}
-						</TableBody>
-					</Table>
-				</div>
-			)}
+						</div>
+					</>
+				)}
+			</div>
 		</div>
 	);
 };
