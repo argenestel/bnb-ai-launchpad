@@ -9,91 +9,214 @@ import {
   addEdge,
   Panel,
 } from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
+import { useBalance, useAccount } from "wagmi";
+import { formatEther } from "viem";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const CharacterFlowVisualization = ({ characterData }) => {
+const CharacterFlow = ({ character }) => {
+  const { address: userWalletAddress, isConnected } = useAccount();
+  const { data: userBalance, isLoading: isBalanceLoading } = useBalance({
+    address: userWalletAddress,
+  });
+  const { data: characterBalance, isLoading: isCharacterBalanceLoading } =
+    useBalance({
+      address: character?.evm_address,
+    });
+
   // Generate nodes based on character data
-  const initialNodes = [
-    {
-      id: "character",
-      type: "default",
-      data: {
-        label: characterData?.name || "Character Name",
+  const createNodes = () => {
+    const nodes = [
+      {
+        id: "character",
+        type: "default",
+        data: {
+          label: (
+            <div className="p-4 text-center">
+              <h3 className="font-bold mb-2">{character?.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                {character?.description?.slice(0, 100)}...
+              </p>
+            </div>
+          ),
+        },
+        position: { x: 400, y: 50 },
+        className:
+          "bg-card border-2 border-primary rounded-lg shadow-lg min-w-[300px]",
       },
-      position: { x: 250, y: 0 },
-      className: "dark:bg-primary dark:text-primary-foreground p-2 rounded-md",
-    },
-    {
-      id: "description",
-      type: "default",
-      data: {
-        label: characterData?.description
-          ? characterData.description.slice(0, 50) + "..."
-          : "Description",
+      // Wallet Information Node
+      {
+        id: "wallet",
+        type: "default",
+        data: {
+          label: (
+            <div className="p-4">
+              <h4 className="font-semibold mb-2">Wallet Details</h4>
+              <div className="space-y-2 text-sm">
+                <p className="font-mono bg-muted p-1 rounded">
+                  {character?.evm_address}
+                </p>
+                <p>
+                  Balance:{" "}
+                  {isCharacterBalanceLoading ? (
+                    <Skeleton className="h-4 w-20 inline-block" />
+                  ) : (
+                    `${characterBalance ? formatEther(characterBalance?.value) : "0"} ${characterBalance?.symbol}`
+                  )}
+                </p>
+              </div>
+            </div>
+          ),
+        },
+        position: { x: 400, y: 200 },
+        className: "bg-card border rounded-lg shadow-lg min-w-[300px]",
       },
-      position: { x: 100, y: 100 },
-      className: "dark:bg-muted p-2 rounded-md",
-    },
-    {
-      id: "model",
-      type: "default",
-      data: {
-        label: `Model: ${characterData?.modelProvider || "Not Set"}`,
+      // Character Details
+      {
+        id: "details",
+        type: "default",
+        data: {
+          label: (
+            <div className="p-4">
+              <h4 className="font-semibold mb-2">Character Details</h4>
+              <div className="space-y-2 text-sm">
+                <p>Model: {character?.modelProvider}</p>
+                <p>Voice: {character?.settings?.voice?.model}</p>
+                <p>Clients: {character?.clients?.join(", ")}</p>
+              </div>
+            </div>
+          ),
+        },
+        position: { x: 100, y: 200 },
+        className: "bg-card border rounded-lg shadow-lg min-w-[250px]",
       },
-      position: { x: 400, y: 100 },
-      className: "dark:bg-muted p-2 rounded-md",
-    },
-    {
-      id: "voice",
-      type: "default",
-      data: {
-        label: `Voice: ${characterData?.voice?.model || "Default"}`,
+      // Knowledge & Topics
+      {
+        id: "knowledge",
+        type: "default",
+        data: {
+          label: (
+            <div className="p-4">
+              <h4 className="font-semibold mb-2">Knowledge Areas</h4>
+              <div className="space-y-2 text-sm">
+                <p>{character?.topics?.slice(0, 3).join(", ")}</p>
+                {character?.knowledge?.length > 0 && (
+                  <p className="text-muted-foreground">
+                    {character.knowledge[0]}...
+                  </p>
+                )}
+              </div>
+            </div>
+          ),
+        },
+        position: { x: 700, y: 200 },
+        className: "bg-card border rounded-lg shadow-lg min-w-[250px]",
       },
-      position: { x: 250, y: 200 },
-      className: "dark:bg-muted p-2 rounded-md",
-    },
-    {
-      id: "traits",
-      type: "default",
-      data: {
-        label: `Traits: ${characterData?.traits?.join(", ") || "None"}`,
+      // Personality
+      {
+        id: "personality",
+        type: "default",
+        data: {
+          label: (
+            <div className="p-4">
+              <h4 className="font-semibold mb-2">Personality</h4>
+              <div className="space-y-2 text-sm">
+                {character?.adjectives?.slice(0, 3).map((adj, i) => (
+                  <span
+                    key={i}
+                    className="inline-block bg-muted px-2 py-1 rounded mr-2"
+                  >
+                    {adj}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ),
+        },
+        position: { x: 400, y: 350 },
+        className: "bg-card border rounded-lg shadow-lg min-w-[300px]",
       },
-      position: { x: 250, y: 300 },
-      className: "dark:bg-muted p-2 rounded-md",
-    },
-  ];
+    ];
 
-  const initialEdges = [
-    {
-      id: "e1-2",
-      source: "character",
-      target: "description",
-      animated: true,
-      style: { stroke: "#94a3b8" }, // slate-400 for better visibility in dark mode
-    },
-    {
-      id: "e1-3",
-      source: "character",
-      target: "model",
-      animated: true,
-      style: { stroke: "#94a3b8" },
-    },
-    {
-      id: "e1-4",
-      source: "character",
-      target: "voice",
-      style: { stroke: "#94a3b8" },
-    },
-    {
-      id: "e1-5",
-      source: "character",
-      target: "traits",
-      style: { stroke: "#94a3b8" },
-    },
-  ];
+    // Connected User Wallet Node
+    if (isConnected) {
+      nodes.push({
+        id: "userWallet",
+        type: "default",
+        data: {
+          label: (
+            <div className="p-4">
+              <h4 className="font-semibold mb-2">Your Wallet</h4>
+              <div className="space-y-2 text-sm">
+                <p className="font-mono bg-muted p-1 rounded">
+                  {userWalletAddress}
+                </p>
+                <p>
+                  Balance:{" "}
+                  {isBalanceLoading ? (
+                    <Skeleton className="h-4 w-20 inline-block" />
+                  ) : (
+                    `${userBalance ? formatEther(userBalance?.value) : "0"} ${userBalance?.symbol}`
+                  )}
+                </p>
+              </div>
+            </div>
+          ),
+        },
+        position: { x: 400, y: -100 },
+        className:
+          "bg-card border-2 border-primary rounded-lg shadow-lg min-w-[300px]",
+      });
+    }
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+    return nodes;
+  };
+
+  const createEdges = () => {
+    const edges = [
+      {
+        id: "e-char-wallet",
+        source: "character",
+        target: "wallet",
+        animated: true,
+        style: { stroke: "hsl(var(--primary))" },
+      },
+      {
+        id: "e-char-details",
+        source: "character",
+        target: "details",
+        style: { stroke: "hsl(var(--muted-foreground))" },
+      },
+      {
+        id: "e-char-knowledge",
+        source: "character",
+        target: "knowledge",
+        style: { stroke: "hsl(var(--muted-foreground))" },
+      },
+      {
+        id: "e-char-personality",
+        source: "character",
+        target: "personality",
+        style: { stroke: "hsl(var(--muted-foreground))" },
+      },
+    ];
+
+    // Add edge from user wallet if connected
+    if (isConnected) {
+      edges.push({
+        id: "e-user-char",
+        source: "userWallet",
+        target: "character",
+        animated: true,
+        style: { stroke: "hsl(var(--primary))" },
+      });
+    }
+
+    return edges;
+  };
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(createNodes());
+  const [edges, setEdges, onEdgesChange] = useEdgesState(createEdges());
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -101,7 +224,7 @@ const CharacterFlowVisualization = ({ characterData }) => {
   );
 
   return (
-    <div className="h-[calc(100vh-25rem)] w-full dark:bg-background rounded-md border">
+    <div className="h-full w-full">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -109,36 +232,35 @@ const CharacterFlowVisualization = ({ characterData }) => {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         fitView
+        fitViewOptions={{ padding: 0.2 }}
         attributionPosition="bottom-right"
         nodesDraggable={true}
         nodesConnectable={false}
-        className="dark:bg-background"
+        className="bg-background"
       >
-        <Background
-          variant="dots"
-          gap={12}
-          size={1}
-          className="dark:bg-muted"
-        />
-        <Controls className="dark:bg-card dark:border-border" />
+        <Background variant="dots" gap={12} size={1} className="bg-muted" />
+        <Controls className="bg-card border-border" />
         <MiniMap
           nodeColor={(node) => {
-            switch (node.type) {
-              case "default":
-                return "#94a3b8"; // slate-400
-              default:
-                return "#475569"; // slate-600
-            }
+            return node.id === "character" || node.id === "userWallet"
+              ? "hsl(var(--primary))"
+              : "hsl(var(--muted))";
           }}
           maskColor="rgba(0, 0, 0, 0.1)"
-          className="dark:bg-card dark:border-border"
+          className="bg-card border-border"
         />
-        <Panel position="top-left" className="dark:bg-card p-2 rounded-md">
-          Character Visualization
+        <Panel position="top-left" className="bg-card p-4 rounded-lg shadow-md">
+          <div className="space-y-2">
+            <h3 className="font-semibold">Character Network</h3>
+            <p className="text-sm text-muted-foreground">
+              Interactive visualization of character details and wallet
+              connections
+            </p>
+          </div>
         </Panel>
       </ReactFlow>
     </div>
   );
 };
 
-export default CharacterFlowVisualization;
+export default CharacterFlow;
