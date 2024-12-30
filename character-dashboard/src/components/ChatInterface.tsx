@@ -36,7 +36,7 @@ const ChatInterface = () => {
 	const [error, setError] = useState(null);
 	const scrollAreaRef = useRef(null);
 	const messagesEndRef = useRef(null);
-
+	const [characterWallet, setCharacterWallet] = useState("");
 	const { address: userWalletAddress, isConnected } = useAccount();
 	const { data: userBalance } = useBalance({
 		address: userWalletAddress,
@@ -156,7 +156,7 @@ const ChatInterface = () => {
 						<h3 className="font-semibold mb-2">Character Wallet</h3>
 						<div className="space-y-2">
 							<p className="font-mono text-sm bg-muted p-2 rounded">
-								{character?.evm_address}
+								{character?.evmAddress}
 							</p>
 							<p className="text-sm">
 								Balance:{" "}
@@ -364,9 +364,9 @@ const ChatInterface = () => {
 							<ArrowLeft className="w-4 h-4 mr-2" />
 							Back
 						</Button>
-						{isConnected && userWalletAddress && (
+						{isConnected && character?.evmAddress && (
 							<Badge variant="secondary" className="font-mono">
-								{`${userWalletAddress.slice(0, 6)}...${userWalletAddress.slice(-4)}`}
+								{`${character.evmAddress.slice(0, 6)}...${character.evmAddress.slice(-4)}`}
 							</Badge>
 						)}
 					</div>
