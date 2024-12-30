@@ -11,6 +11,7 @@
   "dependencies": {
     "@langchain/core": "^0.3.26",
     "@langchain/openai": "^0.3.16",
+    "@sqlitecloud/drivers": "^1.0.354",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
