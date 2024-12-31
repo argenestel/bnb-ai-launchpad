@@ -39,11 +39,19 @@ class CharacterStorage {
                     evm_address TEXT,
                     evm_private_key TEXT,
                     local_file_path TEXT,
+                      token_address TEXT,
+          token_name TEXT,
+          token_symbol TEXT,
+          token_image_url TEXT,
+          token_description TEXT,
+          token_tx_hash TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
                 CREATE INDEX IF NOT EXISTS idx_character_name ON character_storage(name);
+                        CREATE INDEX IF NOT EXISTS idx_token_address ON character_storage(token_address);
+
             `);
 
 			this.initialized = true;
@@ -153,8 +161,14 @@ class CharacterStorage {
                     ipfs_url,
                     evm_address,
                     evm_private_key,
-                    local_file_path
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    local_file_path,
+                       token_address,
+          token_name,
+          token_symbol,
+          token_image_url,
+          token_description,
+          token_tx_hash
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
 				[
 					characterData.name,
@@ -164,6 +178,12 @@ class CharacterStorage {
 					wallet.address,
 					wallet.privateKey,
 					localFile.path,
+					characterData.token?.address || null,
+					characterData.token?.name || null,
+					characterData.token?.symbol || null,
+					characterData.token?.imageUrl || null,
+					characterData.token?.description || null,
+					characterData.token?.transactionHash || null,
 				],
 			);
 

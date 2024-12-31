@@ -71,8 +71,6 @@ const cleanLLMResponse = (content) => {
 	}
 	return content;
 };
-
-// routes/characterRoutes.js
 router.post("/generate", async (req, res) => {
 	try {
 		const {
@@ -82,12 +80,21 @@ router.post("/generate", async (req, res) => {
 			clients,
 			settings,
 			plugins,
+			token, // Token information from frontend
 			...otherParams
 		} = req.body;
 
 		// Validate required fields
 		if (!name.trim()) {
 			return res.status(400).json({ error: "Character name is required" });
+		}
+
+		// Validate token information
+		if (!token?.address || !token?.transactionHash) {
+			return res.status(400).json({
+				error: "Token information is required",
+				details: "Token must be created before generating character",
+			});
 		}
 
 		// Validate optional parameters
@@ -105,10 +112,28 @@ router.post("/generate", async (req, res) => {
 			});
 		}
 
+		// Enhanced prompt to include token information
+		const enhancedSystemPrompt = `${systemPrompt}
+Additionally, this character has a dedicated token on the blockchain:
+- Token Name: ${token.name}
+- Token Symbol: ${token.symbol}
+- Token Address: ${token.address}
+
+Please incorporate this blockchain identity into the character's personality and backstory.`;
+
 		// Clean and prepare input parameters
 		const cleanInput = {
 			name: name.trim(),
-			description: description.trim(),
+			description:
+				description.trim() ||
+				`An AI character with its own token (${token.symbol})`,
+			token: {
+				name: token.name,
+				symbol: token.symbol,
+				address: token.address,
+				transactionHash: token.transactionHash,
+				imageUrl: token.imageUrl,
+			},
 			...(modelProvider && { modelProvider }),
 			...(clients && { clients }),
 			...(settings && { settings }),
@@ -116,10 +141,11 @@ router.post("/generate", async (req, res) => {
 			...otherParams,
 		};
 
-		console.log("Generating character profile...");
+		console.log("Generating character profile with token integration...");
+
 		// Generate character profile
 		const chat = await model.invoke([
-			{ role: "system", content: systemPrompt },
+			{ role: "system", content: enhancedSystemPrompt },
 			{
 				role: "user",
 				content: JSON.stringify(cleanInput),
@@ -129,21 +155,27 @@ router.post("/generate", async (req, res) => {
 		try {
 			let characterProfile;
 
-			// First try to parse the response directly
+			// Parse LLM response
 			try {
 				characterProfile = JSON.parse(chat.content);
 			} catch (initialParseError) {
-				// If direct parsing fails, try to clean the response
 				const cleanedContent = cleanLLMResponse(chat.content);
 				characterProfile = JSON.parse(cleanedContent);
 			}
 
-			// Validate required fields in response
+			// Merge token information with generated profile
+			characterProfile = {
+				...characterProfile,
+				token: cleanInput.token,
+			};
+
+			// Validate required fields
 			if (!characterProfile.name || !characterProfile.description) {
 				throw new Error("Missing required fields in generated profile");
 			}
 
-			console.log("Storing character...");
+			console.log("Storing character with token information...");
+
 			// Store character with IPFS and create EVM wallet
 			let storedCharacter;
 			try {
@@ -156,8 +188,10 @@ router.post("/generate", async (req, res) => {
 			}
 
 			console.log("Initializing memory database...");
-			// Initialize character in memory database
+
+			// Store initial memories
 			try {
+				// Store basic character info
 				await db.storeMemory(
 					characterProfile.name,
 					"system",
@@ -165,31 +199,42 @@ router.post("/generate", async (req, res) => {
 					characterProfile.description,
 					1.0,
 				);
-				console.log("Initial memory stored successfully");
+
+				// Store token information as high-priority memory
+				await db.storeMemory(
+					characterProfile.name,
+					"system",
+					"token_info",
+					JSON.stringify({
+						name: token.name,
+						symbol: token.symbol,
+						address: token.address,
+					}),
+					1.0,
+				);
+
+				console.log("Initial memories stored successfully");
 			} catch (dbError) {
 				console.error("Database error:", dbError);
 				throw new Error(`Failed to store initial memory: ${dbError.message}`);
 			}
 
+			// Store character traits
 			console.log("Storing character traits...");
-			// Store character traits as memories
 			if (characterProfile.traits) {
 				try {
-					for (const [trait, description] of Object.entries(
-						characterProfile.traits,
-					)) {
+					for (const trait of characterProfile.traits) {
 						await db.storeMemory(
 							characterProfile.name,
 							"system",
 							"character_trait",
-							`${trait}: ${description}`,
+							trait,
 							0.9,
 						);
 					}
 					console.log("Character traits stored successfully");
 				} catch (traitsError) {
 					console.error("Traits storage error:", traitsError);
-					// Don't throw here, as traits are optional
 				}
 			}
 
@@ -208,7 +253,7 @@ router.post("/generate", async (req, res) => {
 					}
 				}
 
-				// Store knowledge
+				// Store knowledge base
 				if (characterProfile.knowledge) {
 					for (const knowledge of characterProfile.knowledge) {
 						await db.storeMemory(
@@ -221,19 +266,16 @@ router.post("/generate", async (req, res) => {
 					}
 				}
 
-				// Store style preferences
-				if (characterProfile.style) {
-					await db.storeMemory(
-						characterProfile.name,
-						"system",
-						"style_preferences",
-						JSON.stringify(characterProfile.style),
-						1.0,
-					);
-				}
+				// Store blockchain-specific knowledge
+				await db.storeMemory(
+					characterProfile.name,
+					"system",
+					"blockchain_knowledge",
+					`I have my own token (${token.symbol}) at address ${token.address}. This is part of my digital identity on the blockchain.`,
+					1.0,
+				);
 			} catch (additionalDataError) {
 				console.error("Additional data storage error:", additionalDataError);
-				// Don't throw here as this is enhancement data
 			}
 
 			console.log("Character generation complete");
