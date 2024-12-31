@@ -1,20 +1,30 @@
 import React, { useState } from "react";
-import { useAccount, useWriteContract } from "wagmi";
-import { parseEther } from "viem";
+import {
+	useAccount,
+	useReadContract,
+	useSimulateContract,
+	useWriteContract,
+	useBalance,
+} from "wagmi";
+import { formatEther, parseEther } from "viem";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { abi } from "./abi";
-import { TOKEN_FACTORY_ADDRESS, PLATFORM_FEE } from "./constant";
+import { PTOKEN_ABI } from "./ptokenabi";
+import { TOKEN_FACTORY_ADDRESS, PTOKEN_ADDRESS } from "./constant";
 import { TokenData } from "@/types";
 
 interface TokenFormProps {
 	onTokenCreated: (tokenData: TokenData) => void;
 	characterName: string;
 }
+
+const CREATION_FEE = 1000n; // 1000 PTOKEN
+const MIN_ETH_BALANCE = parseEther("0.01"); // Minimum ETH needed for gas
 
 export function TokenCreationForm({
 	onTokenCreated,
@@ -30,9 +40,89 @@ export function TokenCreationForm({
 	});
 
 	const [error, setError] = useState("");
-	const [isCreating, setIsCreating] = useState(false);
+	const [isPending, setIsPending] = useState(false);
+	const [txHash, setTxHash] = useState<string | null>(null);
 	const { address } = useAccount();
-	const { writeContract } = useWriteContract();
+
+	// Get ETH balance
+	const { data: ethBalance } = useBalance({
+		address: address!,
+		enabled: !!address,
+	});
+
+	// Read PTOKEN allowance and balance
+	const { data: allowance } = useReadContract({
+		address: PTOKEN_ADDRESS,
+		abi: PTOKEN_ABI,
+		functionName: "allowance",
+		args: [address!, TOKEN_FACTORY_ADDRESS],
+		enabled: !!address,
+	});
+
+	const { data: ptokenBalance } = useReadContract({
+		address: PTOKEN_ADDRESS,
+		abi: PTOKEN_ABI,
+		functionName: "balanceOf",
+		args: [address!],
+		enabled: !!address,
+	});
+
+	// Contract interactions setup
+	const { writeContract: writeContractAsync, isPending: isWritePending } =
+		useWriteContract();
+
+	// Simulate approve transaction
+	const { data: simulateApprove, error: approveSimError } = useSimulateContract(
+		{
+			address: PTOKEN_ADDRESS,
+			abi: PTOKEN_ABI,
+			functionName: "approve",
+			args: [TOKEN_FACTORY_ADDRESS, CREATION_FEE],
+			enabled: !!address && (!allowance || allowance < CREATION_FEE),
+		},
+	);
+
+	// Simulate create token transaction
+	const { data: simulateCreate, error: createSimError } = useSimulateContract({
+		address: TOKEN_FACTORY_ADDRESS,
+		abi,
+		functionName: "createMemeToken",
+		args: [
+			formData.name,
+			formData.symbol,
+			formData.imageUrl,
+			formData.description,
+		],
+		enabled: !!address && !!allowance && allowance >= CREATION_FEE,
+	});
+
+	const handleTxComplete = async (hash: string) => {
+		setIsPending(true);
+		setTxHash(hash);
+
+		try {
+			const provider = await window.ethereum;
+			const receipt = await provider.request({
+				method: "eth_getTransactionReceipt",
+				params: [hash],
+			});
+
+			if (receipt) {
+				const tokenAddress = receipt.logs[0].address;
+				onTokenCreated({
+					...formData,
+					address: tokenAddress,
+					transactionHash: hash,
+				});
+			}
+		} catch (err) {
+			console.error("Error getting receipt:", err);
+			setError("Failed to confirm transaction");
+		} finally {
+			setIsPending(false);
+			setTxHash(null);
+		}
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -40,6 +130,20 @@ export function TokenCreationForm({
 
 		if (!address) {
 			setError("Please connect your wallet.");
+			return;
+		}
+
+		if (!ethBalance || ethBalance.value < MIN_ETH_BALANCE) {
+			setError(
+				`Insufficient ETH balance. You need at least ${formatEther(MIN_ETH_BALANCE)} ETH for gas fees.`,
+			);
+			return;
+		}
+
+		if (!ptokenBalance || ptokenBalance < CREATION_FEE) {
+			setError(
+				`Insufficient PTOKEN balance. You need ${CREATION_FEE.toString()} PTOKEN.`,
+			);
 			return;
 		}
 
@@ -53,38 +157,39 @@ export function TokenCreationForm({
 			return;
 		}
 
-		setIsCreating(true);
-
 		try {
-			const tx = await writeContract({
-				address: TOKEN_FACTORY_ADDRESS,
-				abi,
-				functionName: "createMemeToken",
-				args: [
-					formData.name,
-					formData.symbol,
-					formData.imageUrl,
-					formData.description,
-				],
-				value: parseEther(PLATFORM_FEE.toString()),
-			});
+			if (!allowance || allowance < CREATION_FEE) {
+				if (!simulateApprove?.request) {
+					throw new Error(
+						approveSimError?.message || "Failed to simulate approval",
+					);
+				}
+				const hash = await writeContractAsync(simulateApprove.request);
+				await handleTxComplete(hash);
+				return;
+			}
 
-			// Wait for transaction receipt to get token address
-			const receipt = await tx.wait();
-			const tokenAddress = receipt.logs[0].address; // Assuming first log contains token address
-
-			onTokenCreated({
-				...formData,
-				address: tokenAddress,
-				transactionHash: tx.hash,
-			});
+			if (!simulateCreate?.request) {
+				throw new Error(
+					createSimError?.message || "Failed to simulate token creation",
+				);
+			}
+			const hash = await writeContractAsync(simulateCreate.request);
+			await handleTxComplete(hash);
 		} catch (err: any) {
-			console.error("Error creating token:", err);
-			setError(err.message || "Failed to create token.");
-		} finally {
-			setIsCreating(false);
+			console.error("Error:", err);
+			if (err.message.includes("insufficient funds")) {
+				setError(
+					"Insufficient ETH for gas fees. Please add more ETH to your wallet.",
+				);
+			} else {
+				setError(err.message || "Transaction failed.");
+			}
 		}
 	};
+
+	const isLoading = isPending || isWritePending;
+	const needsApproval = !allowance || allowance < CREATION_FEE;
 
 	return (
 		<Card>
@@ -104,6 +209,8 @@ export function TokenCreationForm({
 							placeholder="Character Token"
 							required
 							maxLength={50}
+							disabled={isLoading}
+							className="bg-background"
 						/>
 					</div>
 
@@ -119,7 +226,8 @@ export function TokenCreationForm({
 							placeholder="TKN"
 							required
 							maxLength={11}
-							className="uppercase"
+							className="uppercase bg-background"
+							disabled={isLoading}
 						/>
 					</div>
 
@@ -134,6 +242,8 @@ export function TokenCreationForm({
 							placeholder="https://..."
 							required
 							type="url"
+							className="bg-background"
+							disabled={isLoading}
 						/>
 					</div>
 
@@ -151,26 +261,58 @@ export function TokenCreationForm({
 							placeholder="Describe your character token..."
 							required
 							maxLength={200}
+							className="bg-background"
+							disabled={isLoading}
 						/>
 					</div>
 
 					{error && (
 						<Alert variant="destructive">
+							<AlertCircle className="h-4 w-4" />
 							<AlertTitle>Error</AlertTitle>
 							<AlertDescription>{error}</AlertDescription>
 						</Alert>
 					)}
 
+					{txHash && (
+						<Alert>
+							<AlertTitle>Transaction Pending</AlertTitle>
+							<AlertDescription>Waiting for confirmation...</AlertDescription>
+						</Alert>
+					)}
+
+					{address && (
+						<Alert>
+							<AlertTitle>Network Costs</AlertTitle>
+							<AlertDescription>
+								<div>
+									Current ETH Balance:{" "}
+									{ethBalance ? formatEther(ethBalance.value) : "0"} ETH
+								</div>
+								<div>Required PTOKEN: {CREATION_FEE.toString()} PTOKEN</div>
+								<div>Estimated Gas: ~{formatEther(MIN_ETH_BALANCE)} ETH</div>
+							</AlertDescription>
+						</Alert>
+					)}
+
 					<Button
 						type="submit"
-						disabled={!address || isCreating}
+						disabled={
+							!address ||
+							isLoading ||
+							(!!ethBalance && ethBalance.value < MIN_ETH_BALANCE)
+						}
 						className="w-full"
 					>
-						{isCreating ? (
+						{isLoading ? (
 							<>
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-								Creating Token...
+								{needsApproval ? "Approving PTOKEN..." : "Creating Token..."}
 							</>
+						) : ethBalance && ethBalance.value < MIN_ETH_BALANCE ? (
+							"Insufficient ETH Balance"
+						) : needsApproval ? (
+							"Approve PTOKEN"
 						) : (
 							"Create Token"
 						)}

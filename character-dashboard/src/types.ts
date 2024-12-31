@@ -43,6 +43,7 @@ export interface TerminalLog {
 	type: "error" | "success" | "input" | "info" | "system";
 	content: string;
 }
+export type CharacterType = "ai_companion" | "influencer" | "game_character";
 
 export interface TokenData {
 	address: string;
@@ -51,6 +52,20 @@ export interface TokenData {
 	imageUrl: string;
 	description: string;
 	transactionHash?: string;
+}
+export interface TypeInfo {
+	title: string;
+	description: string;
+	icon: any;
+	defaultTraits: string[];
+	tokenPrefix: string;
+	suggestedFields: {
+		name: string;
+		label: string;
+		type: string;
+		options?: string[];
+		placeholder?: string;
+	}[];
 }
 
 export interface CharacterData {

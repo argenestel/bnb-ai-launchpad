@@ -46,7 +46,51 @@ const CreateCharacterPage: React.FC = () => {
 			"Token integration complete",
 		]);
 	};
+	const handleComplete = async (data: CharacterData) => {
+		setLoading(true);
+		try {
+			updateBuildStage("Final Integration", "running", [
+				"Processing completed character data",
+			]);
 
+			// Update local state with the completed data
+			setCharacterData(data);
+
+			// Post to your API
+			const response = await fetch("http://localhost:3000/characters", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(data),
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to save character");
+			}
+
+			const result = await response.json();
+
+			updateBuildStage("Final Integration", "success", [
+				"Character saved successfully",
+				"Initializing character systems",
+				"Preparing for dashboard...",
+			]);
+
+			addBuildLog("Character creation completed successfully");
+
+			// Redirect to dashboard after a brief delay
+			setTimeout(() => navigate("/"), 1500);
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : "Creation failed";
+			updateBuildStage("Final Integration", "error", [
+				`Error: ${errorMessage}`,
+			]);
+			setError(errorMessage);
+			addBuildLog(`Error during completion: ${errorMessage}`);
+		} finally {
+			setLoading(false);
+		}
+	};
 	// Chat Interface State
 	const [chatMessages, setChatMessages] = useState<Message[]>([
 		{
@@ -401,6 +445,7 @@ Available commands:
 						onGenerate={handleGenerate}
 						onCreate={handleCreate}
 						loading={loading}
+						onComplete={handleComplete}
 					/>
 
 					<div className="border-t pt-6">

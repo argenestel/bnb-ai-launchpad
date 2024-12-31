@@ -6,14 +6,14 @@ import {
 	midnightTheme,
 } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
-import { opBNBTestnet, bscTestnet } from "wagmi/chains";
+import { bscTestnet } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 const queryClient = new QueryClient();
 
-const config = getDefaultConfig({
+export const config = getDefaultConfig({
 	appName: "BNB Launchpad",
 	projectId: "YOUR_PROJECT_ID",
-	chains: [opBNBTestnet, bscTestnet],
+	chains: [bscTestnet],
 	ssr: true, // If your dApp uses server side rendering (SSR)
 });
 //0xD80DC42a1c0AD05CCF2f95Ee7831B4225b356e7D

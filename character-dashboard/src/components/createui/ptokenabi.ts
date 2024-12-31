@@ -1,4 +1,4 @@
-export const ptokenabi = [
+export const PTOKEN_ABI = [
 	{
 		inputs: [
 			{
