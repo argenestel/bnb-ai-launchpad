@@ -85,30 +85,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
 								/>
 							</div>
 						</div>
-						<Separator />
 						<div className="mt-2"></div>
-						<Label className="mt-2">Token Info (Required) *</Label>
-						<div className="grid grid-cols-1 border-gray-800 border rounded-xl p-4 md:grid-cols-2 gap-4">
-							<div className="space-y-2">
-								<Label>Token Name</Label>
-								<Input
-									id="name"
-									value={characterData.name}
-									onChange={(e) => console.log("name", e.target.value)}
-									placeholder="Enter token name"
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label>Token Ticker Symbol</Label>
-								<Input
-									id="name"
-									value={characterData.name}
-									onChange={(e) => console.log("name", e.target.value)}
-									placeholder="Enter ticker name"
-								/>
-							</div>
-						</div>
 
 						<div className="space-y-2">
 							<Label htmlFor="background">Background Story</Label>
