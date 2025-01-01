@@ -228,7 +228,7 @@ export function CharacterForm({
 				args: [
 					characterData.name,
 					characterData.name.slice(0, 4).toUpperCase(),
-					"", // Image URL will be generated after token creation
+					"helloworld", // Image URL will be generated after token creation
 					characterData.description || `Token for ${characterData.name}`,
 				],
 			});

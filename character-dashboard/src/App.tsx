@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import CharacterDashboard from "@/components/CharacterDashboard";
 import CreateCharacterPage from "@/components/CreateCharacterPage";
-import ChatInterface from "@/components/ChatInterface";
+import ChatInterface from "@/components/chatui/ChatInterface";
 import { ThemeProvider } from "@/components/theme-provider";
 import { EVMProvider } from "@/components/evm-provider";
 function App() {

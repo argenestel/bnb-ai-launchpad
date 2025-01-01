@@ -3,7 +3,6 @@ import {
 	useAccount,
 	useReadContract,
 	useSimulateContract,
-	useWriteContract,
 	useBalance,
 } from "wagmi";
 import { formatEther, parseEther } from "viem";
@@ -17,7 +16,7 @@ import { abi } from "./abi";
 import { PTOKEN_ABI } from "./ptokenabi";
 import { TOKEN_FACTORY_ADDRESS, PTOKEN_ADDRESS } from "./constant";
 import { TokenData } from "@/types";
-
+import { writeContract } from "@wagmi/core";
 interface TokenFormProps {
 	onTokenCreated: (tokenData: TokenData) => void;
 	characterName: string;
@@ -47,7 +46,6 @@ export function TokenCreationForm({
 	// Get ETH balance
 	const { data: ethBalance } = useBalance({
 		address: address!,
-		enabled: !!address,
 	});
 
 	// Read PTOKEN allowance and balance
@@ -56,7 +54,6 @@ export function TokenCreationForm({
 		abi: PTOKEN_ABI,
 		functionName: "allowance",
 		args: [address!, TOKEN_FACTORY_ADDRESS],
-		enabled: !!address,
 	});
 
 	const { data: ptokenBalance } = useReadContract({
@@ -64,7 +61,6 @@ export function TokenCreationForm({
 		abi: PTOKEN_ABI,
 		functionName: "balanceOf",
 		args: [address!],
-		enabled: !!address,
 	});
 
 	// Contract interactions setup
@@ -78,7 +74,6 @@ export function TokenCreationForm({
 			abi: PTOKEN_ABI,
 			functionName: "approve",
 			args: [TOKEN_FACTORY_ADDRESS, CREATION_FEE],
-			enabled: !!address && (!allowance || allowance < CREATION_FEE),
 		},
 	);
 
@@ -93,7 +88,6 @@ export function TokenCreationForm({
 			formData.imageUrl,
 			formData.description,
 		],
-		enabled: !!address && !!allowance && allowance >= CREATION_FEE,
 	});
 
 	const handleTxComplete = async (hash: string) => {
@@ -164,7 +158,7 @@ export function TokenCreationForm({
 						approveSimError?.message || "Failed to simulate approval",
 					);
 				}
-				const hash = await writeContractAsync(simulateApprove.request);
+				const hash = await writeContract(simulateApprove.request);
 				await handleTxComplete(hash);
 				return;
 			}
@@ -174,7 +168,7 @@ export function TokenCreationForm({
 					createSimError?.message || "Failed to simulate token creation",
 				);
 			}
-			const hash = await writeContractAsync(simulateCreate.request);
+			const hash = await writeContract(simulateCreate.request);
 			await handleTxComplete(hash);
 		} catch (err: any) {
 			console.error("Error:", err);

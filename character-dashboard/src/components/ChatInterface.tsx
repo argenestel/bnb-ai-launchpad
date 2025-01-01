@@ -45,6 +45,145 @@ const ChatInterface = () => {
 		address: character?.evm_address,
 	});
 
+	// Message component with fade effect
+	const Message = ({ message, index, totalMessages }) => {
+		// Calculate opacity based on message position
+		const opacity = Math.max(
+			0,
+			Math.min(1, (index + 1) / (totalMessages * 0.6)),
+		);
+
+		return (
+			<div
+				className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} transition-opacity duration-300`}
+				style={{ opacity }}
+			>
+				<div
+					className={`max-w-[80%] rounded-lg p-4 space-y-2 backdrop-blur-sm
+          ${
+						message.role === "user"
+							? "bg-primary/80 text-primary-foreground"
+							: "bg-muted/80"
+					}`}
+				>
+					<div className="flex items-center gap-2">
+						{message.role === "assistant" && character && (
+							<Avatar className="h-6 w-6">
+								<div className="bg-background/90 text-foreground w-full h-full flex items-center justify-center text-xs font-semibold">
+									{character.name[0]}
+								</div>
+							</Avatar>
+						)}
+						<div className="flex-1 min-w-0">{message.content}</div>
+					</div>
+					<div
+						className={`flex items-center justify-between text-xs
+            ${
+							message.role === "user"
+								? "text-primary-foreground/80"
+								: "text-muted-foreground"
+						}`}
+					>
+						<span>{formatTimestamp(message.metadata?.timestamp)}</span>
+						{message.metadata?.topics && (
+							<div className="flex gap-1">
+								{message.metadata.topics.map((topic, i) => (
+									<span
+										key={i}
+										className="px-1.5 py-0.5 rounded-full bg-background/30"
+									>
+										{topic}
+									</span>
+								))}
+							</div>
+						)}
+					</div>
+				</div>
+			</div>
+		);
+	};
+
+	// Background media component with gradient overlay
+	const BackgroundMedia = ({ url, type = "image" }) => (
+		<div className="absolute inset-0 -z-10">
+			{type === "image" ? (
+				<div
+					className="absolute inset-0 bg-cover bg-center"
+					style={{ backgroundImage: `url(${url})` }}
+				/>
+			) : (
+				<video
+					className="absolute inset-0 w-full h-full object-cover"
+					src={url}
+					autoPlay
+					loop
+					muted
+					playsInline
+				/>
+			)}
+			{/* Gradient overlay */}
+			<div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+		</div>
+	);
+
+	// Modified chat card content
+	const ChatCardContent = () => (
+		<div className="relative flex-1 flex flex-col min-h-0">
+			<BackgroundMedia
+				url="/path/to/your/media" // Replace with your media URL
+				type="image" // or "video"
+			/>
+
+			<CardContent className="flex-1 flex flex-col min-h-0 p-4">
+				<ScrollArea
+					ref={scrollAreaRef}
+					className="flex-1 pr-4 mask-linear-gradient"
+					type="always"
+				>
+					<div className="space-y-4">
+						{messages.map((msg, idx) => (
+							<Message
+								key={idx}
+								message={msg}
+								index={idx}
+								totalMessages={messages.length}
+							/>
+						))}
+						{loading && (
+							<div className="flex justify-start">
+								<div className="bg-muted/80 backdrop-blur-sm rounded-lg p-3">
+									<Loader2 className="w-4 h-4 animate-spin" />
+								</div>
+							</div>
+						)}
+						<div ref={messagesEndRef} />
+					</div>
+				</ScrollArea>
+
+				<div className="mt-4 flex gap-2 relative z-10">
+					<Input
+						value={inputMessage}
+						onChange={(e) => setInputMessage(e.target.value)}
+						onKeyPress={handleKeyPress}
+						placeholder="Type your message..."
+						disabled={loading}
+						className="flex-1 bg-background/50 backdrop-blur-sm"
+					/>
+					<Button
+						onClick={handleSendMessage}
+						disabled={loading || !inputMessage.trim()}
+						className="bg-primary/80 hover:bg-primary/90 backdrop-blur-sm"
+					>
+						{loading ? (
+							<Loader2 className="w-4 h-4 animate-spin" />
+						) : (
+							<Send className="w-4 h-4" />
+						)}
+					</Button>
+				</div>
+			</CardContent>
+		</div>
+	);
 	// Details Sheet Component
 	const CharacterDetails = () => (
 		<Sheet>
@@ -292,80 +431,30 @@ const ChatInterface = () => {
 	};
 
 	// Message Component
-	const Message = ({ message }) => (
-		<div
-			className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-		>
-			<div
-				className={`max-w-[80%] rounded-lg p-4 space-y-2 ${
-					message.role === "user"
-						? "bg-primary text-primary-foreground"
-						: "bg-muted"
-				}`}
-			>
-				<div className="flex items-center gap-2">
-					{message.role === "assistant" && character && (
-						<Avatar className="h-6 w-6">
-							<div className="bg-background text-foreground w-full h-full flex items-center justify-center text-xs font-semibold">
-								{character.name[0]}
-							</div>
-						</Avatar>
-					)}
-					<div className="flex-1 min-w-0">{message.content}</div>
-				</div>
-				<div
-					className={`flex items-center justify-between text-xs ${
-						message.role === "user"
-							? "text-primary-foreground/80"
-							: "text-muted-foreground"
-					}`}
-				>
-					<span>{formatTimestamp(message.metadata?.timestamp)}</span>
-					{message.metadata?.topics && (
-						<div className="flex gap-1">
-							{message.metadata.topics.map((topic, i) => (
-								<span
-									key={i}
-									className="px-1.5 py-0.5 rounded-full bg-background/20"
-								>
-									{topic}
-								</span>
-							))}
-						</div>
-					)}
-				</div>
-			</div>
-		</div>
-	);
-
-	if (error) {
-		return (
-			<div className="container mx-auto p-4">
-				<Navbar />
-				<Alert variant="destructive">
-					<AlertDescription>{error}</AlertDescription>
-				</Alert>
-				<Button onClick={() => navigate("/")} className="mt-4">
-					<ArrowLeft className="w-4 h-4 mr-2" />
-					Back to Dashboard
-				</Button>
-			</div>
-		);
-	}
 
 	return (
 		<div className="container mx-auto p-4 h-screen flex flex-col">
 			<Navbar />
 			<div className="w-full flex-1 flex pt-4 flex-col min-h-0">
+				{/* Background for the entire container */}
+				<BackgroundMedia
+					url="https://www.youtube.com/watch?v=NSQWIpbFtJU"
+					type="youtube"
+				/>
+
 				{/* Header */}
-				<div className="flex items-center justify-between mb-4">
+				<div className="flex items-center justify-between mb-4 relative z-10">
 					<div className="flex items-center gap-4">
-						<Button variant="outline" onClick={() => navigate("/")}>
+						<Button
+							variant="outline"
+							onClick={() => navigate("/")}
+							className="backdrop-blur-sm"
+						>
 							<ArrowLeft className="w-4 h-4 mr-2" />
 							Back
 						</Button>
 						{isConnected && character?.evmAddress && (
-							<Badge variant="secondary" className="font-mono">
+							<Badge variant="secondary" className="font-mono backdrop-blur-sm">
 								{`${character.evmAddress.slice(0, 6)}...${character.evmAddress.slice(-4)}`}
 							</Badge>
 						)}
@@ -374,14 +463,16 @@ const ChatInterface = () => {
 						<CharacterDetails />
 						<WalletDetails />
 						{character && (
-							<h1 className="text-2xl font-bold">Chat with {character.name}</h1>
+							<h1 className="text-2xl font-bold text-white backdrop-blur-sm rounded-lg px-3 py-1">
+								Chat with {character.name}
+							</h1>
 						)}
 					</div>
 				</div>
 
 				{!isConnected ? (
-					<Card className="p-6">
-						<CardContent className="text-center">
+					<Card className="p-6 relative backdrop-blur-sm bg-background/50">
+						<CardContent className="text-center relative z-10">
 							<h2 className="text-lg font-semibold mb-4">
 								Connect Your Wallet
 							</h2>
@@ -391,10 +482,10 @@ const ChatInterface = () => {
 						</CardContent>
 					</Card>
 				) : (
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
-						{/* Chat Card */}
-						<Card className="flex-1 flex flex-col min-h-0">
-							<CardHeader>
+					<div className="grid grid-cols-12 gap-6 flex-1">
+						{/* Chat Card - Takes up 8 columns */}
+						<Card className="col-span-8 flex-1 flex flex-col min-h-0 relative overflow-hidden backdrop-blur-sm bg-background/50">
+							<CardHeader className="relative z-10">
 								<CardTitle>
 									{character && (
 										<div className="flex items-center gap-4">
@@ -416,19 +507,24 @@ const ChatInterface = () => {
 								</CardTitle>
 							</CardHeader>
 
-							<CardContent className="flex-1 flex flex-col min-h-0 p-4">
+							<CardContent className="flex-1 flex flex-col min-h-0 p-4 relative z-10">
 								<ScrollArea
 									ref={scrollAreaRef}
-									className="flex-1 pr-4"
+									className="flex-1 pr-4 mask-linear-gradient"
 									type="always"
 								>
 									<div className="space-y-4">
 										{messages.map((msg, idx) => (
-											<Message key={idx} message={msg} />
+											<Message
+												key={idx}
+												message={msg}
+												index={idx}
+												totalMessages={messages.length}
+											/>
 										))}
 										{loading && (
 											<div className="flex justify-start">
-												<div className="bg-muted rounded-lg p-3">
+												<div className="bg-muted/80 backdrop-blur-sm rounded-lg p-3">
 													<Loader2 className="w-4 h-4 animate-spin" />
 												</div>
 											</div>
@@ -444,11 +540,12 @@ const ChatInterface = () => {
 										onKeyPress={handleKeyPress}
 										placeholder="Type your message..."
 										disabled={loading}
-										className="flex-1"
+										className="flex-1 bg-background/50 backdrop-blur-sm"
 									/>
 									<Button
 										onClick={handleSendMessage}
 										disabled={loading || !inputMessage.trim()}
+										className="bg-primary/80 hover:bg-primary/90 backdrop-blur-sm"
 									>
 										{loading ? (
 											<Loader2 className="w-4 h-4 animate-spin" />
@@ -460,8 +557,10 @@ const ChatInterface = () => {
 							</CardContent>
 						</Card>
 
-						{/* Flow Visualization Card */}
-						<CombinedRightPanel character={character} />
+						{/* Right Panel - Takes up 4 columns */}
+						<div className="col-span-4 backdrop-blur-sm bg-background/50 rounded-lg">
+							<CombinedRightPanel character={character} />
+						</div>
 					</div>
 				)}
 			</div>
