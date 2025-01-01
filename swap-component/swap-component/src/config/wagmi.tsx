@@ -14,7 +14,6 @@ export const config = getDefaultConfig({
   appName: "BNB Launchpad",
   projectId: "YOUR_PROJECT_ID",
   chains: [bscTestnet],
-  ssr: true, // If your dApp uses server side rendering (SSR)
 });
 //0xD80DC42a1c0AD05CCF2f95Ee7831B4225b356e7D
 //TokenFactory v1

@@ -71,6 +71,85 @@ const cleanLLMResponse = (content) => {
 	}
 	return content;
 };
+
+// Add this endpoint to routes/characterRoutes.js
+
+// Update character token
+router.patch("/:name/token", async (req, res) => {
+	try {
+		const { name } = req.params;
+		const { tokenAddress, tokenName, tokenSymbol, transactionHash, imageUrl } =
+			req.body;
+
+		// Validate required fields
+		if (!tokenAddress || !tokenName || !tokenSymbol || !transactionHash) {
+			return res.status(400).json({
+				error: "Missing required token information",
+				details:
+					"Token address, name, symbol, and transaction hash are required",
+			});
+		}
+
+		// Get existing character
+		const character = await characterStorage.getCharacterByName(name);
+		if (!character) {
+			return res.status(404).json({
+				error: "Character not found",
+			});
+		}
+
+		// Update token information
+		const tokenUpdate = {
+			token: {
+				name: tokenName,
+				symbol: tokenSymbol,
+				address: tokenAddress,
+				transactionHash: transactionHash,
+				...(imageUrl && { imageUrl }),
+			},
+		};
+
+		// Update character with new token information
+		const updatedCharacter = await characterStorage.updateCharacter(
+			character.id,
+			tokenUpdate,
+		);
+
+		// Update token information in memory database
+		await db.storeMemory(
+			character.name,
+			"system",
+			"token_info",
+			JSON.stringify({
+				name: tokenName,
+				symbol: tokenSymbol,
+				address: tokenAddress,
+			}),
+			1.0,
+		);
+
+		// Update blockchain knowledge in memory
+		await db.storeMemory(
+			character.name,
+			"system",
+			"blockchain_knowledge",
+			`I have my own token (${tokenSymbol}) at address ${tokenAddress}. This is part of my digital identity on the blockchain.`,
+			1.0,
+		);
+
+		res.json({
+			success: true,
+			data: updatedCharacter,
+		});
+	} catch (error) {
+		console.error("Error updating character token:", error);
+		res.status(500).json({
+			error: "Failed to update character token",
+			details: error.message,
+		});
+	}
+});
+
 router.post("/generate", async (req, res) => {
 	try {
 		const {
@@ -112,15 +191,6 @@ router.post("/generate", async (req, res) => {
 			});
 		}
 
-		// Enhanced prompt to include token information
-		const enhancedSystemPrompt = `${systemPrompt}
-Additionally, this character has a dedicated token on the blockchain:
-- Token Name: ${token.name}
-- Token Symbol: ${token.symbol}
-- Token Address: ${token.address}
-
-Please incorporate this blockchain identity into the character's personality and backstory.`;
-
 		// Clean and prepare input parameters
 		const cleanInput = {
 			name: name.trim(),
@@ -145,7 +215,7 @@ Please incorporate this blockchain identity into the character's personality and
 
 		// Generate character profile
 		const chat = await model.invoke([
-			{ role: "system", content: enhancedSystemPrompt },
+			{ role: "system", content: systemPrompt },
 			{
 				role: "user",
 				content: JSON.stringify(cleanInput),

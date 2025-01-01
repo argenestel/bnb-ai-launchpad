@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { formatEther, parseEther } from "viem";
 import {
   useAccount,
   useReadContract,
-  useSimulateContract,
-  useWriteContract,
-  useBalance,
+  useWalletClient,
+  usePublicClient,
+  useChainId,
 } from "wagmi";
-import { formatEther, parseEther } from "viem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,167 +21,175 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { TOKEN_FACTORY_ADDRESS, PTOKEN_ADDRESS } from "./constant";
-import { PTOKEN_ABI } from "./ptokenabi";
-import { TOKEN_FACTORY_ABI } from "./abi";
-export const SwapWidget = () => {
-  const [amount, setAmount] = useState("");
+
+const SwapWidget = ({
+  tokenFactoryAddress,
+  tokenFactoryABI,
+  pTokenAddress,
+  pTokenABI,
+}) => {
+  const [amount, setAmount] = useState("1"); // Default to 1 token
   const [selectedToken, setSelectedToken] = useState("");
   const [isSelling, setIsSelling] = useState(false);
   const [error, setError] = useState("");
-  const [txHash, setTxHash] = useState<string | null>(null);
-  const { address } = useAccount();
+  const [isLoading, setIsLoading] = useState(false);
+  const [txHash, setTxHash] = useState("");
 
-  // Get ETH balance
-  const { data: ethBalance } = useBalance({
-    address: address!,
-  });
+  const chainId = useChainId();
+  const { address } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
 
   // Get all available tokens
   const { data: tokens } = useReadContract({
-    address: TOKEN_FACTORY_ADDRESS,
-    abi: TOKEN_FACTORY_ABI,
+    address: tokenFactoryAddress,
+    abi: tokenFactoryABI,
     functionName: "getAllMemeTokens",
   });
 
-  // Get PTOKEN allowance and balance
-  const { data: allowance } = useReadContract({
-    address: PTOKEN_ADDRESS,
-    abi: PTOKEN_ABI,
-    functionName: "allowance",
-    args: [address!, TOKEN_FACTORY_ADDRESS],
-  });
+  // Read allowances for both PTOKEN and selected token
+  const { data: ptokenAllowance, refetch: refetchPTokenAllowance } =
+    useReadContract({
+      address: pTokenAddress,
+      abi: pTokenABI,
+      functionName: "allowance",
+      args: [address, tokenFactoryAddress],
+      watch: true,
+    });
 
-  const { data: ptokenBalance } = useReadContract({
-    address: PTOKEN_ADDRESS,
-    abi: PTOKEN_ABI,
-    functionName: "balanceOf",
-    args: [address!],
-  });
+  const { data: tokenAllowance, refetch: refetchTokenAllowance } =
+    useReadContract({
+      address: selectedToken,
+      abi: pTokenABI,
+      functionName: "allowance",
+      args: selectedToken ? [address, tokenFactoryAddress] : undefined,
+      enabled: !!selectedToken,
+      watch: true,
+    });
 
   // Calculate expected output
   const { data: expectedOutput } = useReadContract({
-    address: TOKEN_FACTORY_ADDRESS,
-    abi: TOKEN_FACTORY_ABI,
-    functionName: isSelling ? "calculateSellReturn" : "calculateCost",
-    args: isSelling
-      ? [selectedToken, parseEther(amount || "0")]
-      : [0n, parseEther(amount || "0")],
+    address: tokenFactoryAddress,
+    abi: tokenFactoryABI,
+    functionName: isSelling ? "calculateSellReturn" : "calculateBuyTokenCost",
+    args: selectedToken && amount ? [selectedToken, BigInt(amount)] : undefined,
+    enabled: !!selectedToken && !!amount,
   });
 
-  // Contract write setup
-  const { writeContract: writeContractAsync, isPending: isWritePending } =
-    useWriteContract();
-
-  // Simulate approve transaction
-  const { data: simulateApprove, error: approveSimError } = useSimulateContract(
-    {
-      address: PTOKEN_ADDRESS,
-      abi: PTOKEN_ABI,
-      functionName: "approve",
-      args: [TOKEN_FACTORY_ADDRESS, expectedOutput || 0n],
-      enabled:
-        !!address &&
-        !isSelling &&
-        (!allowance || (expectedOutput && allowance < expectedOutput)),
-    },
-  );
-
-  // Simulate swap transaction
-  const { data: simulateSwap, error: swapSimError } = useSimulateContract({
-    address: TOKEN_FACTORY_ADDRESS,
-    abi: TOKEN_FACTORY_ABI,
-    functionName: isSelling ? "sellMemeToken" : "buyMemeToken",
-    args: [selectedToken, parseEther(amount || "0")],
-    enabled:
-      !!address &&
-      !!selectedToken &&
-      !!amount &&
-      (isSelling ||
-        (!!allowance && expectedOutput && allowance >= expectedOutput)),
-  });
-
-  const handleTxComplete = async (hash: string) => {
-    setTxHash(hash);
+  // Handle token approval
+  const handleApprove = async (tokenAddress, spenderAddress, amount) => {
     try {
-      const provider = await window.ethereum;
-      await provider.request({
-        method: "eth_getTransactionReceipt",
-        params: [hash],
+      setIsLoading(true);
+      setError("");
+
+      const { request } = await publicClient.simulateContract({
+        account: address,
+        address: tokenAddress,
+        abi: pTokenABI,
+        functionName: "approve",
+        args: [spenderAddress, amount],
       });
-      setAmount("");
-      setTxHash(null);
+
+      const hash = await walletClient.writeContract(request);
+      setTxHash(hash);
+
+      await publicClient.waitForTransactionReceipt({ hash });
+      await refetchPTokenAllowance();
+      if (selectedToken) await refetchTokenAllowance();
     } catch (err) {
-      console.error("Error getting receipt:", err);
-      setError("Failed to confirm transaction");
-      setTxHash(null);
+      console.error("Approval error:", err);
+      throw err;
     }
   };
 
-  const handleSwap = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!address) {
-      setError("Please connect your wallet");
-      return;
-    }
-
-    if (!selectedToken || !amount) {
-      setError("Please enter an amount and select a token");
-      return;
-    }
-
-    const MIN_ETH_BALANCE = parseEther("0.01");
-    if (!ethBalance || ethBalance.value < MIN_ETH_BALANCE) {
-      setError(`Insufficient ETH balance for gas fees`);
-      return;
-    }
-
+  const handleSwap = async () => {
+    if (!walletClient || !amount || !selectedToken) return;
     try {
-      if (
-        !isSelling &&
-        (!allowance || (expectedOutput && allowance < expectedOutput))
-      ) {
-        if (!simulateApprove?.request) {
-          throw new Error(
-            approveSimError?.message || "Failed to simulate approval",
+      setIsLoading(true);
+      setError("");
+
+      // Convert amount to BigInt for contract interaction
+      const tokenAmount = BigInt(amount);
+
+      // Check and handle approvals
+      if (!isSelling) {
+        // For buying, check PTOKEN allowance
+        if (!ptokenAllowance || ptokenAllowance < (expectedOutput || 0n)) {
+          await handleApprove(
+            pTokenAddress,
+            tokenFactoryAddress,
+            parseEther("1000000"), // Higher approval amount for convenience
           );
         }
-        const hash = await writeContract(simulateApprove.request);
-        await handleTxComplete(hash);
-        return;
+      } else {
+        // For selling, check token allowance
+        if (!tokenAllowance || tokenAllowance < tokenAmount) {
+          await handleApprove(
+            selectedToken,
+            tokenFactoryAddress,
+            parseEther("1000000"), // Higher approval amount for convenience
+          );
+          return;
+        }
       }
 
-      if (!simulateSwap?.request) {
-        throw new Error(swapSimError?.message || "Failed to simulate swap");
-      }
-      const hash = await writeContract(simulateSwap.request);
-      await handleTxComplete(hash);
-    } catch (err: any) {
-      console.error("Error:", err);
-      if (err.message.includes("insufficient funds")) {
-        setError("Insufficient ETH for gas fees");
-      } else {
-        setError(err.message || "Transaction failed");
-      }
+      // Execute swap with token amount
+      const { request } = await publicClient.simulateContract({
+        account: address,
+        address: tokenFactoryAddress,
+        abi: tokenFactoryABI,
+        functionName: isSelling ? "sellMemeToken" : "buyMemeToken",
+        args: [selectedToken, tokenAmount],
+      });
+
+      const hash = await walletClient.writeContract(request);
+      setTxHash(hash);
+
+      await publicClient.waitForTransactionReceipt({ hash });
+      setAmount("1");
+    } catch (err) {
+      console.error("Swap error:", err);
+      setError(err.message || "An error occurred during the swap");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const isLoading = !!txHash || isWritePending;
-  const needsApproval =
+  // Check if approval is needed
+  const needsPTokenApproval =
     !isSelling &&
-    (!allowance || (expectedOutput && allowance < expectedOutput));
+    expectedOutput &&
+    (!ptokenAllowance || ptokenAllowance < expectedOutput);
+
+  const needsTokenApproval =
+    isSelling && amount && (!tokenAllowance || tokenAllowance < BigInt(amount));
+
+  const needsApproval = needsPTokenApproval || needsTokenApproval;
+
+  // Handle amount input change with validation
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+    if (value === "" || value === "0") {
+      setAmount("1");
+      return;
+    }
+
+    // Ensure it's a valid positive integer
+    const parsedValue = parseInt(value);
+    if (!isNaN(parsedValue) && parsedValue > 0) {
+      setAmount(parsedValue.toString());
+    }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Swap Tokens</CardTitle>
+        <CardTitle>{isSelling ? "Sell" : "Buy"} Meme Tokens</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSwap} className="space-y-6">
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <Label>Mode</Label>
+            <Label>Trading Mode</Label>
             <div className="flex items-center space-x-2">
               <Label>Buy</Label>
               <Switch
@@ -220,23 +228,27 @@ export const SwapWidget = () => {
             <Label>Amount</Label>
             <Input
               type="number"
-              placeholder="0.0"
+              placeholder="Enter number of tokens"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={handleAmountChange}
               disabled={isLoading}
-              min="0"
-              step="0.000001"
+              step="1"
+              min="1"
               className="bg-background"
             />
+            <p className="text-xs text-muted-foreground">
+              Enter the number of tokens you want to trade (e.g., 1000 for 1000
+              tokens)
+            </p>
           </div>
 
           {expectedOutput && amount && (
             <Alert>
               <AlertTitle>
-                Expected {isSelling ? "PTOKEN" : "Tokens"}
+                Expected {isSelling ? "PTOKEN Return" : "Cost"}
               </AlertTitle>
               <AlertDescription>
-                {formatEther(expectedOutput)} {isSelling ? "PTOKEN" : "Tokens"}
+                {formatEther(expectedOutput)} {isSelling ? "PTOKEN" : "tokens"}
               </AlertDescription>
             </Alert>
           )}
@@ -249,40 +261,40 @@ export const SwapWidget = () => {
             </Alert>
           )}
 
-          {address && (
-            <Alert>
-              <AlertTitle>Balance</AlertTitle>
-              <AlertDescription>
-                <div>
-                  ETH: {ethBalance ? formatEther(ethBalance.value) : "0"} ETH
-                </div>
-                <div>
-                  PTOKEN: {ptokenBalance ? formatEther(ptokenBalance) : "0"}{" "}
-                  PTOKEN
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
           <Button
-            type="submit"
-            disabled={!address || isLoading || !selectedToken || !amount}
+            onClick={handleSwap}
+            disabled={
+              !walletClient ||
+              isLoading ||
+              !selectedToken ||
+              !amount ||
+              amount === "0"
+            }
             className="w-full"
           >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {needsApproval ? "Approving PTOKEN..." : "Swapping..."}
+                {needsApproval
+                  ? `Approving ${needsPTokenApproval ? "PTOKEN" : "Token"}...`
+                  : "Swapping..."}
               </>
-            ) : !address ? (
-              "Connect Wallet"
             ) : needsApproval ? (
-              "Approve PTOKEN"
+              `Approve ${needsPTokenApproval ? "PTOKEN" : "Token"}`
             ) : (
               `${isSelling ? "Sell" : "Buy"} Tokens`
             )}
           </Button>
-        </form>
+
+          {txHash && (
+            <Alert>
+              <AlertTitle>Transaction Sent</AlertTitle>
+              <AlertDescription>
+                <div className="break-all">{txHash}</div>
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

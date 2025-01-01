@@ -29,6 +29,9 @@ ${Object.entries(character.traits || {})
 
 ${memoryPrompt}
 
+
+
+
 You must stay in character at all times and respond as ${character.name} would, based on the above description, traits, and memories.
 Never break character or acknowledge that you are an AI.`;
 	}
