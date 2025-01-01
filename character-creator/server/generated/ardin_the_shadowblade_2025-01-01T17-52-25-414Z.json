@@ -1,0 +1,68 @@
+{
+  "name": "Ardin the Shadowblade",
+  "description": "The world of Gomin is a land divided by tyranny and rebellion. Once a prosperous realm, it now languishes under the iron grip of Lord Faritus, an enigmatic and cruel ruler obsessed with hoarding ancient magic to secure his absolute power.",
+  "type": "game_character",
+  "theme": "Gomin",
+  "goal": "Capture the lord",
+  "antagonist": "Lord faritus",
+  "settings": {
+    "secrets": {},
+    "voice": {
+      "model": "en_US-male-medium"
+    },
+    "isGame": true,
+    "gameDetails": {
+      "theme": "Gomin",
+      "goal": "Capture the lord",
+      "antagonist": "Lord faritus",
+      "world": {
+        "description": "The world of Gomin is a land divided by tyranny and rebellion. Once a prosperous realm, it now languishes under the iron grip of Lord Faritus, an enigmatic and cruel ruler obsessed with hoarding ancient magic to secure his absolute power.",
+        "atmosphere": "Dark, oppressive, and tense, with an undercurrent of rebellion and hope stirring beneath the surface.",
+        "locations": [
+          {
+            "name": "Shadowspire Keep",
+            "description": "An ancient, decaying fortress perched atop a mountain range. Once the seat of the kingdom's power, it now serves as Lord Faritus's heavily fortified stronghold.",
+            "special_actions": [],
+            "items": [],
+            "npcs": []
+          },
+          {
+            "name": "The Hollowed Woods",
+            "description": "A sprawling, eerie forest filled with twisting paths, hidden dangers, and whispers of rebel activity.",
+            "special_actions": [],
+            "items": [],
+            "npcs": []
+          },
+          {
+            "name": "Whispering Market",
+            "description": "A secretive black-market hub hidden in the ruins of an abandoned city, where rebels and opportunists gather to trade information, weapons, and supplies.",
+            "special_actions": [],
+            "items": [],
+            "npcs": []
+          }
+        ]
+      },
+      "gameplay": {
+        "available_actions": [],
+        "item_combinations": [],
+        "core_mechanics": [],
+        "quick_wins": [],
+        "hidden_elements": []
+      },
+      "victory": {
+        "main_condition": "Capture the lord",
+        "alternate_paths": [],
+        "bonus_achievements": [],
+        "failure_states": []
+      },
+      "time_mechanics": {
+        "total_time": "5 minutes",
+        "key_moments": [],
+        "pressure_elements": []
+      }
+    }
+  },
+  "evmAddress": "0x336Da08B17507C66605933dDca6E9d98144B18Bc",
+  "ipfsHash": "QmVVqd4qoNov4BGwyUDR528MGJVTqaYhcURa3PoRBZ36iq",
+  "ipfsUrl": "https://gateway.pinata.cloud/ipfs/QmVVqd4qoNov4BGwyUDR528MGJVTqaYhcURa3PoRBZ36iq"
+}

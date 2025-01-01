@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 import chatRoutes from "./routes/chatRoutes.js";
 import characterRoutes from "./routes/characterRoutes.js";
 import db from "./db/database.js";
-
+import gameAgentRoutes from "./routes/gameAgentRoutes.js";
 // Initialize environment variables
 dotenv.config();
 
@@ -26,7 +26,7 @@ await db.initialize();
 // Routes
 app.use("/chat", chatRoutes);
 app.use("/characters", characterRoutes);
-
+app.use("/game-agents", gameAgentRoutes);
 // Health check endpoint
 app.get("/health", (req, res) => {
 	const requiredEnvVars = [

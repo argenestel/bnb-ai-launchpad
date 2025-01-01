@@ -17,18 +17,24 @@ import {
   Edit,
   Star,
   Sparkles,
+  Gamepad2,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Navbar from "@/components/Navbar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Character {
   id: string;
   name: string;
   description: string;
   evm_address: string;
+  type: 'game_character' | 'ai_character';
+  token?: {
+    address: string;
+  };
 }
 
 interface CharacterCardProps {
@@ -38,7 +44,12 @@ interface CharacterCardProps {
   onNavigate: (path: string) => void;
 }
 
-
+interface Game extends Character {
+  type: 'game_character';
+  theme: string;
+  goal: string;
+  antagonist: string;
+}
 
 const useCharacterAvatar = (name: unknown) => {
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -68,6 +79,11 @@ const useCharacterAvatar = (name: unknown) => {
   return { avatarUrl, loading };
 };
 
+const shortenAddress = (address: string | undefined) => {
+  if (!address) return '';
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
+
 const CharacterCard = ({
   character,
   featured = false,
@@ -77,10 +93,6 @@ const CharacterCard = ({
   const { avatarUrl, loading: avatarLoading } = useCharacterAvatar(
     character.name,
   );
-
-  const shortenAddress = (address: string ) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
 
   if (featured) {
     return (
@@ -201,8 +213,133 @@ const CharacterCard = ({
   );
 };
 
+const GameCard = ({
+  game,
+  featured = false,
+  onDelete,
+  onNavigate,
+}: {
+  game: Game;
+  featured?: boolean;
+  onDelete: (name: string) => void;
+  onNavigate: (path: string) => void;
+}) => {
+  const { avatarUrl, loading: avatarLoading } = useCharacterAvatar(game.name);
+
+  if (featured) {
+    return (
+      <Card className="border-2">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                <Avatar className="h-24 w-24 ring-2 ring-offset-2">
+                  {avatarLoading ? (
+                    <div className="animate-pulse bg-muted h-full w-full rounded-full" />
+                  ) : (
+                    <AvatarImage src={avatarUrl!} alt={game.name} className="object-cover" />
+                  )}
+                  <AvatarFallback className="text-2xl">
+                    <Gamepad2 className="h-8 w-8" />
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-2xl">{game.name}</CardTitle>
+                  <Badge variant="secondary">Featured Game</Badge>
+                </div>
+                <CardDescription className="text-base">
+                  {game.theme || game.description}
+                </CardDescription>
+              </div>
+            </div>
+            <Button onClick={() => onNavigate(`/game/${game.name}`)} className="gap-2">
+              <Gamepad2 className="h-4 w-4" />
+              Play Game
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-muted-foreground mt-2">Goal: {game.goal}</p>
+            <p className="text-muted-foreground">Antagonist: {game.antagonist}</p>
+            {game.evm_address && (
+              <Badge variant="outline" className="font-mono">
+                {shortenAddress(game.evm_address)}
+              </Badge>
+            )}
+            {game.token?.address && (
+              <Badge variant="outline" className="font-mono">
+                {shortenAddress(game.token.address)}
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="flex flex-col transition-shadow duration-300 group">
+      <CardHeader>
+        <div className="flex items-center space-x-4">
+          <Avatar className="h-16 w-16 ring-1 ring-offset-1">
+            {avatarLoading ? (
+              <div className="animate-pulse bg-muted h-full w-full rounded-full" />
+            ) : (
+              <AvatarImage src={avatarUrl!} alt={game.name} className="object-cover" />
+            )}
+            <AvatarFallback>
+              <Gamepad2 className="h-6 w-6" />
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <CardTitle>{game.name}</CardTitle>
+            <CardDescription className="line-clamp-2">
+              {game.theme || game.description}
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground mb-4">Goal: {game.goal}</p>
+        {game.evm_address && (
+          <Badge variant="outline" className="font-mono">
+            {shortenAddress(game.evm_address)}
+          </Badge>
+        )}
+        {game.token?.address && (
+          <Badge variant="outline" className="font-mono">
+            {shortenAddress(game.token.address)}
+          </Badge>
+        )}
+      </CardContent>
+      <CardFooter className="flex justify-end gap-2 mt-auto pt-4 border-t">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onNavigate(`/game/${game.name}`)}
+          title="Play game"
+        >
+          <Gamepad2 className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onDelete(game.name)}
+          title="Delete game"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+};
+
 const CharacterDashboard = () => {
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -218,7 +355,11 @@ const CharacterDashboard = () => {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters`);
       if (!response.ok) throw new Error("Failed to fetch characters");
       const data = await response.json();
-      setCharacters(data.characters);
+      
+      // Separate games and characters
+      const allCharacters = data.characters || [];
+      setCharacters(allCharacters.filter((char: Character) => char.type !== 'game_character'));
+      setGames(allCharacters.filter((char: Character) => char.type === 'game_character'));
     } catch (err) {
       console.log(err);
     } finally {
@@ -231,8 +372,6 @@ const CharacterDashboard = () => {
     console.log(characterName);
     await fetchCharacters();
   };
-
-  const featuredCharacter = characters[0];
 
   if (error) {
     return (
@@ -253,28 +392,36 @@ const CharacterDashboard = () => {
         <Navbar />
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">Characters</h1>
+            <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
             <p className="text-muted-foreground mt-2 text-lg">
-              Manage and interact with your AI characters
+              Manage your AI characters and games
             </p>
           </div>
-          <Button onClick={() => navigate("/create")}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Character
-          </Button>
+          <div className="flex gap-4">
+            <Button onClick={() => navigate("/create")}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Character
+            </Button>
+          </div>
         </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center h-96">
             <Loader2 className="h-12 w-12 animate-spin" />
           </div>
-        ) : characters.length === 0 ? (
+        ) : characters.length === 0 && games.length === 0 ? (
           <Card className="flex flex-col items-center justify-center h-96 text-center border-2 border-dashed">
             <CardHeader>
               <Sparkles className="h-12 w-12 mb-4" />
-              <CardTitle className="text-2xl">No Characters Yet</CardTitle>
+              <CardTitle className="text-2xl">No Content Yet</CardTitle>
               <CardDescription className="text-lg">
-                Get started by creating your first AI character
+                Get started by creating your first AI character or game
               </CardDescription>
             </CardHeader>
             <CardFooter>
@@ -284,29 +431,68 @@ const CharacterDashboard = () => {
             </CardFooter>
           </Card>
         ) : (
-          <>
-            {featuredCharacter && (
-              <CharacterCard
-                character={featuredCharacter}
-                featured={true}
-                onDelete={handleDelete}
-                onNavigate={navigate}
-              />
-            )}
+          <Tabs defaultValue="characters" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="characters">Characters</TabsTrigger>
+              <TabsTrigger value="games">Games</TabsTrigger>
+            </TabsList>
 
-            <Separator className="my-12" />
+            <TabsContent value="characters">
+              {characters.length > 0 && (
+                <>
+                  {characters[0] && (
+                    <CharacterCard
+                      character={characters[0]}
+                      featured={true}
+                      onDelete={handleDelete}
+                      onNavigate={navigate}
+                    />
+                  )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {characters.slice(1).map((character) => (
-                <CharacterCard
-                  key={character!.id}
-                  character={character}
-                  onDelete={handleDelete}
-                  onNavigate={navigate}
-                />
-              ))}
-            </div>
-          </>
+                  <Separator className="my-12" />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {characters.slice(1).map((character) => (
+                      <CharacterCard
+                        key={character.id}
+                        character={character}
+                        onDelete={handleDelete}
+                        onNavigate={navigate}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="games">
+              {games.length > 0 && (
+                <>
+                  {games[0] && (
+                    <GameCard
+                      game={games[0]}
+                      featured={true}
+                      onDelete={handleDelete}
+                      onNavigate={navigate}
+                    />
+                  )}
+
+                  <Separator className="my-12" />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {games.slice(1).map((game) => (
+                      <GameCard
+                        key={game.id}
+                        game={game}
+                        onDelete={handleDelete}
+                        onNavigate={navigate}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>

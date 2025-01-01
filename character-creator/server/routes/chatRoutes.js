@@ -9,8 +9,11 @@ const router = express.Router();
 // Chat endpoint
 router.post("/:characterName", async (req, res) => {
 	try {
-		const { characterName } = req.params;
-		const { message, userId, conversationId } = req.body;
+		// Decode the character name from the URL
+		const characterName = decodeURIComponent(req.params.characterName);
+		console.log("Received chat request for character:", characterName);
+		
+		const { message, userId, conversationId, context } = req.body;
 
 		if (!message) {
 			return res.status(400).json({ error: "Message is required" });
@@ -20,11 +23,20 @@ router.post("/:characterName", async (req, res) => {
 			return res.status(400).json({ error: "User ID is required" });
 		}
 
+		// Log the full request for debugging
+		console.log("Chat request body:", {
+			characterName,
+			userId,
+			message,
+			context
+		});
+
 		const response = await conversationHandler.handleConversation(
 			userId,
 			characterName,
 			message,
 			conversationId,
+			context
 		);
 
 		res.json(response);

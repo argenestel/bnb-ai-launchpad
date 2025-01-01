@@ -34,24 +34,28 @@ class CharacterStorage {
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT UNIQUE NOT NULL,
                     description TEXT,
+                    type TEXT DEFAULT 'ai_character',
+                    theme TEXT,
+                    goal TEXT,
+                    antagonist TEXT,
                     ipfs_hash TEXT,
                     ipfs_url TEXT,
                     evm_address TEXT,
                     evm_private_key TEXT,
                     local_file_path TEXT,
-                      token_address TEXT,
-          token_name TEXT,
-          token_symbol TEXT,
-          token_image_url TEXT,
-          token_description TEXT,
-          token_tx_hash TEXT,
+                    token_address TEXT,
+                    token_name TEXT,
+                    token_symbol TEXT,
+                    token_image_url TEXT,
+                    token_description TEXT,
+                    token_tx_hash TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
 
                 CREATE INDEX IF NOT EXISTS idx_character_name ON character_storage(name);
-                        CREATE INDEX IF NOT EXISTS idx_token_address ON character_storage(token_address);
-
+                CREATE INDEX IF NOT EXISTS idx_token_address ON character_storage(token_address);
+                CREATE INDEX IF NOT EXISTS idx_character_type ON character_storage(type);
             `);
 
 			this.initialized = true;
@@ -157,22 +161,30 @@ class CharacterStorage {
                 INSERT INTO character_storage (
                     name,
                     description,
+                    type,
+                    theme,
+                    goal,
+                    antagonist,
                     ipfs_hash,
                     ipfs_url,
                     evm_address,
                     evm_private_key,
                     local_file_path,
-                       token_address,
-          token_name,
-          token_symbol,
-          token_image_url,
-          token_description,
-          token_tx_hash
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `,
+                    token_address,
+                    token_name,
+                    token_symbol,
+                    token_image_url,
+                    token_description,
+                    token_tx_hash
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `,
 				[
 					characterData.name,
 					characterData.description,
+					characterData.type || 'ai_character',
+					characterData.theme || null,
+					characterData.goal || null,
+					characterData.antagonist || null,
 					pinataResult.ipfsHash,
 					pinataResult.ipfsUrl,
 					wallet.address,
@@ -189,11 +201,16 @@ class CharacterStorage {
 
 			return {
 				id: result.lastID,
-				...characterData,
+				name: characterData.name,
+				description: characterData.description,
+				type: characterData.type || 'ai_character',
+				theme: characterData.theme,
+				goal: characterData.goal,
+				antagonist: characterData.antagonist,
 				ipfsHash: pinataResult.ipfsHash,
 				ipfsUrl: pinataResult.ipfsUrl,
 				evmAddress: wallet.address,
-				localFile: localFile.filename,
+				token: characterData.token,
 			};
 		} catch (error) {
 			console.error("Error storing character:", error);
@@ -205,25 +222,77 @@ class CharacterStorage {
 		try {
 			await this.initialize();
 
+			console.log("Getting character from database:", name);
 			const character = await this.db.get(
 				"SELECT * FROM character_storage WHERE name = ?",
 				[name],
 			);
 
 			if (!character) {
+				console.log("No character found with name:", name);
 				return null;
 			}
 
-			// Read the local file for full character data
-			const localData = await fs.readFile(character.local_file_path, "utf8");
-			const characterData = JSON.parse(localData);
+			console.log("Found character in database:", {
+				id: character.id,
+				name: character.name,
+				type: character.type
+			});
 
-			return {
-				...characterData,
-				ipfsHash: character.ipfs_hash,
-				ipfsUrl: character.ipfs_url,
-				evmAddress: character.evm_address,
-			};
+			// Read the local file for full character data
+			try {
+				const localData = await fs.readFile(character.local_file_path, "utf8");
+				const characterData = JSON.parse(localData);
+
+				// Merge database and local file data
+				const mergedData = {
+					...characterData,
+					id: character.id,
+					name: character.name,
+					type: character.type || 'ai_character',
+					description: character.description,
+					theme: character.theme,
+					goal: character.goal,
+					antagonist: character.antagonist,
+					ipfsHash: character.ipfs_hash,
+					ipfsUrl: character.ipfs_url,
+					evmAddress: character.evm_address,
+					token: character.token_address ? {
+						address: character.token_address,
+						name: character.token_name,
+						symbol: character.token_symbol,
+						imageUrl: character.token_image_url,
+						description: character.token_description,
+						transactionHash: character.token_tx_hash,
+					} : null,
+				};
+
+				console.log("Returning merged character data");
+				return mergedData;
+			} catch (fileError) {
+				console.warn("Could not read local file, returning database data:", fileError);
+				// If local file is not available, return database data
+				return {
+					id: character.id,
+					name: character.name,
+					type: character.type || 'ai_character',
+					description: character.description,
+					theme: character.theme,
+					goal: character.goal,
+					antagonist: character.antagonist,
+					ipfsHash: character.ipfs_hash,
+					ipfsUrl: character.ipfs_url,
+					evmAddress: character.evm_address,
+					token: character.token_address ? {
+						address: character.token_address,
+						name: character.token_name,
+						symbol: character.token_symbol,
+						imageUrl: character.token_image_url,
+						description: character.token_description,
+						transactionHash: character.token_tx_hash,
+					} : null,
+				};
+			}
 		} catch (error) {
 			console.error("Error getting character:", error);
 			throw error;
@@ -239,8 +308,16 @@ class CharacterStorage {
                     id,
                     name,
                     description,
+                    type,
+                    theme,
+                    goal,
+                    antagonist,
                     ipfs_url,
                     evm_address,
+                    token_address,
+                    token_name,
+                    token_symbol,
+                    token_image_url,
                     created_at,
                     updated_at
                 FROM character_storage

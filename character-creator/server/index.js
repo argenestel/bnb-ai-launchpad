@@ -1,5 +1,4 @@
 import express from "express";
-import { ChatOpenAI } from "@langchain/openai";
 import dotenv from "dotenv";
 import fs from "fs/promises";
 import path from "path";
@@ -7,6 +6,9 @@ import { fileURLToPath } from "url";
 import { systemPrompt } from "./prompt.js";
 import { saveCharacter } from "./characterSaver.js";
 import cors from "cors";
+import gameAgentRoutes from './routes/gameAgentRoutes.js';
+import { model, validateParameters } from './config/ai.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -14,6 +16,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cors());
+
 // Validation schemas for optional parameters
 const validModelProviders = ["openai", "anthropic", "llama_local"];
 const validVoiceModels = [
@@ -22,51 +25,6 @@ const validVoiceModels = [
 	"en_US-neutral-medium",
 ];
 const validClients = ["discord", "direct", "twitter", "telegram", "farcaster"];
-
-// Initialize Azure OpenAI chat model
-const model = new ChatOpenAI({
-	temperature: 0.9,
-	azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-	azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
-	azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
-	azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_INSTANCE_NAME,
-});
-
-// Validate character parameters
-function validateParameters(params) {
-	const errors = [];
-
-	if (
-		params.modelProvider &&
-		!validModelProviders.includes(params.modelProvider)
-	) {
-		errors.push(
-			`Invalid modelProvider. Must be one of: ${validModelProviders.join(", ")}`,
-		);
-	}
-
-	if (params.clients) {
-		const invalidClients = params.clients.filter(
-			(client) => !validClients.includes(client),
-		);
-		if (invalidClients.length > 0) {
-			errors.push(
-				`Invalid clients: ${invalidClients.join(", ")}. Valid options are: ${validClients.join(", ")}`,
-			);
-		}
-	}
-
-	if (
-		params.settings?.voice?.model &&
-		!validVoiceModels.includes(params.settings.voice.model)
-	) {
-		errors.push(
-			`Invalid voice model. Must be one of: ${validVoiceModels.join(", ")}`,
-		);
-	}
-
-	return errors;
-}
 
 // Character generation endpoint
 app.post("/generate", async (req, res) => {
@@ -285,6 +243,9 @@ app.get("/health", (req, res) => {
 		missingEnvVars: missingEnvVars.length > 0 ? missingEnvVars : undefined,
 	});
 });
+
+// Add game agent routes
+app.use('/game-agents', gameAgentRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

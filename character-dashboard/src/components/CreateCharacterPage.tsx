@@ -6,12 +6,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, FormInput, MessageSquare, Coins } from "lucide-react";
 import CharacterForm from "./createui/CharacterForm";
-import ChatInterface from "./createui/ChatInterface";
 import TerminalComponent from "./createui/TerminalComponent";
 import { BuildStage, CharacterData, Message, TerminalLog } from "@/types";
 import { TokenCreationForm } from "./createui/TokenCreationForm";
 import { TokenData } from "@/types";
 import Navbar from "@/components/Navbar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import GameForm from "./createui/GameForm";
 type CreationStep = "name" | "description" | "confirm" | "customize";
 
 const CreateCharacterPage: React.FC = () => {
@@ -34,6 +36,13 @@ const CreateCharacterPage: React.FC = () => {
 			memoryEnabled: true,
 			responseStyle: "balanced",
 		},
+	});
+
+	// Add game state
+	const [gameData, setGameData] = useState({
+		theme: "",
+		goal: "",
+		antagonist: "",
 	});
 
 	const handleTokenCreated = (tokenData: TokenData) => {
@@ -210,78 +219,6 @@ const handleComplete = async (data: CharacterData) => {
 		addBuildLog(`Updated ${parent}.${field}: ${value}`);
 	};
 
-	const handleChatMessage = async (message: string) => {
-		if (!message.trim()) return;
-
-		setChatMessages((prev) => [...prev, { role: "user", content: message }]);
-		setChatInput("");
-		setLoading(true);
-
-		try {
-			let response = "";
-			switch (creationStep) {
-				case "name":
-					handleInputChange("name", message);
-					response =
-						"Great name choice! Now, tell me about your character's personality and background. What are they like?";
-					setCreationStep("description");
-					break;
-
-				case "description":
-					handleInputChange("description", message);
-					response =
-						"Thanks! Would you like me to generate additional details for your character? Say 'yes' to generate or 'no' to proceed with what we have.";
-					setCreationStep("confirm");
-					break;
-
-				case "confirm":
-					if (message.toLowerCase().includes("yes")) {
-						response = "Generating additional details...";
-						await handleGenerate();
-						response =
-							"I've generated some additional details! Would you like to add any specific traits or adjust the voice settings?";
-					} else {
-						response =
-							"Alright! Would you like to customize any other settings like voice or traits before we create the character?";
-					}
-					setCreationStep("customize");
-					break;
-
-				case "customize":
-					if (message.toLowerCase().includes("create")) {
-						response = "Great! Creating your character now...";
-						await handleCreate();
-					} else if (message.toLowerCase().includes("voice")) {
-						response =
-							"You can choose from Male (US), Female (US), or Neutral (US) voice. Which would you prefer?";
-					} else if (message.toLowerCase().includes("trait")) {
-						response =
-							"What traits would you like to add to your character? You can list them one by one.";
-					} else {
-						response =
-							"Tell me what you'd like to customize (voice, traits), or say 'create' when you're ready to finalize the character.";
-					}
-					break;
-			}
-
-			setTimeout(() => {
-				setChatMessages((prev) => [
-					...prev,
-					{ role: "assistant", content: response },
-				]);
-				setLoading(false);
-			}, 1000);
-		} catch (error) {
-			setChatMessages((prev) => [
-				...prev,
-				{
-					role: "assistant",
-					content: `Error: ${error instanceof Error ? error.message : "Something went wrong"}`,
-				},
-			]);
-			setLoading(false);
-		}
-	};
 
 	const handleGenerate = async () => {
 		setLoading(true);
@@ -463,6 +400,73 @@ Available commands:
 		}
 	};
 
+	// Add game creation handler
+	const handleGameCreate = async () => {
+		if (!gameData.theme || !gameData.goal || !gameData.antagonist) {
+			setError("Theme, goal, and antagonist are required");
+			return;
+		}
+
+		setLoading(true);
+		try {
+			updateBuildStage("Game Framework", "running", [
+				"Initializing game generation",
+			]);
+
+			// Format the request payload according to the expected schema
+			const gamePayload = {
+				name: `Game_${Date.now()}`, // Generate a unique name
+				description: gameData.theme,
+				theme: gameData.theme,
+				goal: gameData.goal,
+				antagonist: gameData.antagonist,
+				modelProvider: "openai",
+				settings: {
+					secrets: {},
+					voice: {
+						model: "en_US-male-medium"
+					}
+				}
+			};
+
+			const response = await fetch(
+				`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/game-agents/generate`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json"
+					},
+					body: JSON.stringify(gamePayload)
+				}
+			);
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || "Failed to create game");
+			}
+
+			const data = await response.json();
+			
+			updateBuildStage("Game Framework", "success", [
+				"Game framework generated",
+				"Game creation successful",
+				"Initiating dashboard redirect...",
+			]);
+
+			// Add success log
+			addBuildLog(`Game created successfully: ${gamePayload.name}`);
+
+			setTimeout(() => navigate("/"), 1500);
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : "Game creation failed";
+			updateBuildStage("Game Framework", "error", [`Error: ${errorMessage}`]);
+			setError(errorMessage);
+			addBuildLog(`Error creating game: ${errorMessage}`);
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	return (
 		<div className="container mx-auto py-8 min-h-screen flex flex-col">
 			<Navbar />
@@ -481,47 +485,47 @@ Available commands:
 			)}
 
 			<div className="flex-1 space-y-6">
-				<div className="grid gap-6">
-					<CharacterForm
-						characterData={characterData}
-						onInputChange={handleInputChange}
-						onNestedChange={handleNestedChange}
-						onGenerate={handleGenerate}
-						onCreate={handleCreate}
-						loading={loading}
-						onComplete={handleComplete}
-					/>
+				<Tabs defaultValue="character" className="w-full">
+					<TabsList className="grid w-full grid-cols-2 mb-6">
+						<TabsTrigger value="character">Character</TabsTrigger>
+						<TabsTrigger value="game">Game</TabsTrigger>
+					</TabsList>
 
-					<div className="border-t pt-6">
-						<h2 className="text-xl font-semibold mb-4">Token Creation</h2>
-						{characterData.name ? (
-							<TokenCreationForm
-								onTokenCreated={handleTokenCreated}
-								characterName={characterData.name}
+					<TabsContent value="character">
+						<div className="grid gap-6">
+							<CharacterForm
+								characterData={characterData}
+								onInputChange={handleInputChange}
+								onNestedChange={handleNestedChange}
+								onGenerate={handleGenerate}
+								onCreate={handleCreate}
+								loading={loading}
+								onComplete={handleComplete}
 							/>
-						) : (
-							<Alert>
-								<AlertTitle>Name Required</AlertTitle>
-								<AlertDescription>
-									Please set your character's name before creating a token.
-								</AlertDescription>
-							</Alert>
-						)}
-					</div>
-				</div>
-			</div>
 
-			<div className="mt-6">
-				<TerminalComponent
-					logs={terminalLogs}
-					input={terminalInput}
-					onInputChange={(e) => setTerminalInput(e.target.value)}
-					onKeyPress={handleKeyPress}
-					buildStages={buildStages}
-					isBuilding={loading}
-					onCharacterUpdate={handleInputChange}
-					characterData={characterData}
-				/>
+							<div className="border-t pt-6">
+								<h2 className="text-xl font-semibold mb-4">Token Creation</h2>
+								{characterData.name ? (
+									<TokenCreationForm
+										onTokenCreated={handleTokenCreated}
+										characterName={characterData.name}
+									/>
+								) : (
+									<Alert>
+										<AlertTitle>Name Required</AlertTitle>
+										<AlertDescription>
+											Please set your character's name before creating a token.
+										</AlertDescription>
+									</Alert>
+								)}
+							</div>
+						</div>
+					</TabsContent>
+
+					<TabsContent value="game">
+						<GameForm onComplete={handleComplete} />
+					</TabsContent>
+				</Tabs>
 			</div>
 		</div>
 	);
