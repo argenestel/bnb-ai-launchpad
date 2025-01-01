@@ -12,7 +12,7 @@ import { useAccount, useBalance } from "wagmi";
 import { formatEther } from "viem";
 import Navbar from "@/components/Navbar";
 import CombinedRightPanel from "../CombinedRight";
-import BackgroundMedia from "./BackgroundMedia";
+import GameBackground from "./GameBackground";
 import Message from "./Message";
 
 interface Game {
@@ -222,14 +222,16 @@ const GameChatInterface = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 h-screen flex flex-col">
+    <div className="container mx-auto p-4 h-screen flex flex-col overflow-hidden">
+      <div className="fixed inset-0 -z-10">
+        <GameBackground 
+          characterName={characterName}
+          imageUrl={game?.token?.imageUrl}
+        />
+      </div>
+
       <Navbar />
       <div className="w-full flex-1 flex pt-4 flex-col min-h-0">
-        <BackgroundMedia 
-          characterName={characterName} 
-          youtubeUrl={game?.token?.imageUrl} 
-        />
-
         {/* Header */}
         <div className="flex items-center justify-between mb-4 relative z-10">
           <div className="flex items-center gap-4">
@@ -276,7 +278,7 @@ const GameChatInterface = () => {
                     <div className="flex items-center gap-4">
                       <Avatar className="w-10 h-10">
                         <AvatarImage src={game.token?.imageUrl} alt={game.name} />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-primary text-primary-foreground">
                           <Gamepad2 className="h-6 w-6" />
                         </AvatarFallback>
                       </Avatar>
@@ -337,7 +339,7 @@ const GameChatInterface = () => {
                     {loading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Send className="w-4 w-4" />
+                      <Send className="w-4 h-4" />
                     )}
                   </Button>
                 </div>
