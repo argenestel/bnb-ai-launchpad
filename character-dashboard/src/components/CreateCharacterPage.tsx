@@ -487,8 +487,8 @@ Available commands:
 			<div className="flex-1 space-y-6">
 				<Tabs defaultValue="character" className="w-full">
 					<TabsList className="grid w-full grid-cols-2 mb-6">
-						<TabsTrigger value="character">Character</TabsTrigger>
-						<TabsTrigger value="game">Game</TabsTrigger>
+						<TabsTrigger value="character">AI Agent</TabsTrigger>
+						<TabsTrigger value="game">AI Game</TabsTrigger>
 					</TabsList>
 
 					<TabsContent value="character">
