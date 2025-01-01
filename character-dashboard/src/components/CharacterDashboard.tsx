@@ -480,13 +480,10 @@ const CharacterDashboard = () => {
             </p>
           </div>
           <div className="flex gap-4">
-            <Button variant="outline" onClick={() => navigate("/games/create")}>
-              <Gamepad2 className="mr-2 h-4 w-4" />
-              Create Game
-            </Button>
+
             <Button onClick={() => navigate("/create")}>
               <Plus className="mr-2 h-4 w-4" />
-              Create Character
+              Create AI
             </Button>
           </div>
         </div>
@@ -538,13 +535,10 @@ const CharacterDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardFooter className="flex gap-4">
-              <Button variant="outline" onClick={() => navigate("/games/create")}>
-                <Gamepad2 className="mr-2 h-4 w-4" />
-                Create Game
-              </Button>
+
               <Button onClick={() => navigate("/create")}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create Character
+                Create
               </Button>
             </CardFooter>
           </Card>
