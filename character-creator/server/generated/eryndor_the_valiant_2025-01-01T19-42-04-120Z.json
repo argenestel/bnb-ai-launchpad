@@ -1,0 +1,68 @@
+{
+  "name": "Eryndor the Valiant",
+  "description": "A sprawling fantasy kingdom filled with enchanted forests, treacherous mountains, and ancient castles. The realm is under siege by dark forces led by the Demon Dark Lord Sith.",
+  "type": "game_character",
+  "theme": "Fantasy",
+  "goal": "Rescue princess",
+  "antagonist": "The demon dark lord sith\n",
+  "settings": {
+    "secrets": {},
+    "voice": {
+      "model": "en_US-male-medium"
+    },
+    "isGame": true,
+    "gameDetails": {
+      "theme": "Fantasy",
+      "goal": "Rescue princess",
+      "antagonist": "The demon dark lord sith\n",
+      "world": {
+        "description": "A sprawling fantasy kingdom filled with enchanted forests, treacherous mountains, and ancient castles. The realm is under siege by dark forces led by the Demon Dark Lord Sith.",
+        "atmosphere": "A mix of high-stakes danger and hopeful resilience, with an air of magical wonder and looming evil.",
+        "locations": [
+          {
+            "name": "Evergreen Forest",
+            "description": "A lush and vibrant forest where ancient trees whisper secrets and magical creatures roam.",
+            "special_actions": [],
+            "items": [],
+            "npcs": []
+          },
+          {
+            "name": "Mount Doomshade",
+            "description": "A craggy and sinister mountain range cloaked in perpetual gloom, home to dangerous beasts and dark magic.",
+            "special_actions": [],
+            "items": [],
+            "npcs": []
+          },
+          {
+            "name": "Castle Blackspire",
+            "description": "The imposing fortress of the Demon Dark Lord Sith, surrounded by lava-filled moats and guarded by his demonic minions.",
+            "special_actions": [],
+            "items": [],
+            "npcs": []
+          }
+        ]
+      },
+      "gameplay": {
+        "available_actions": [],
+        "item_combinations": [],
+        "core_mechanics": [],
+        "quick_wins": [],
+        "hidden_elements": []
+      },
+      "victory": {
+        "main_condition": "Rescue princess",
+        "alternate_paths": [],
+        "bonus_achievements": [],
+        "failure_states": []
+      },
+      "time_mechanics": {
+        "total_time": "5 minutes",
+        "key_moments": [],
+        "pressure_elements": []
+      }
+    }
+  },
+  "evmAddress": "0x5cE1Ed471538a4be731c7915Fa2E2013dF0cb555",
+  "ipfsHash": "QmSjnD7CjYnCeYfFRGduQ4uzXYjC8SViBD1KVPe856n6qm",
+  "ipfsUrl": "https://gateway.pinata.cloud/ipfs/QmSjnD7CjYnCeYfFRGduQ4uzXYjC8SViBD1KVPe856n6qm"
+}

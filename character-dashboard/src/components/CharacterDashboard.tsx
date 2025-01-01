@@ -38,9 +38,16 @@ interface Character {
   evm_address: string;
   type: 'game_character' | 'ai_character';
   twitter_handle?: string;
-  token?: {
-    address: string;
-  };
+  token_address: string | null;
+  token_name: string | null;
+  token_symbol: string | null;
+  token_image_url: string | null;
+  theme: string | null;
+  goal: string | null;
+  antagonist: string | null;
+  created_at: string;
+  updated_at: string;
+  ipfs_url?: string;
 }
 
 interface CharacterCardProps {
@@ -165,6 +172,7 @@ const CharacterCard = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-primary transition-colors"
+                      title={`@${character.twitter_handle}`}
                     >
                       <Twitter className="h-5 w-5" />
                     </a>
@@ -214,9 +222,9 @@ const CharacterCard = ({
               <Badge variant="outline" className="font-mono bg-primary/5">
                 {shortenAddress(character.evm_address)}
               </Badge>
-              {character.token?.address && (
+              {character.token_address && (
                 <Badge variant="outline" className="font-mono bg-primary/5">
-                  Token: {shortenAddress(character.token.address)}
+                  Token: {shortenAddress(character.token_address)}
                 </Badge>
               )}
             </div>
@@ -260,6 +268,7 @@ const CharacterCard = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-primary transition-colors"
+                  title={`@${character.twitter_handle}`}
                 >
                   <Twitter className="h-4 w-4" />
                 </a>

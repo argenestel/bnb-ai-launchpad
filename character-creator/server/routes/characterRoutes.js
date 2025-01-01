@@ -201,6 +201,7 @@ router.post("/generate", async (req, res) => {
 			...(settings && { settings }),
 			...(plugins && { plugins }),
 			...(twitter_handle && { twitter_handle }),
+			token,
 			...otherParams,
 		};
 
@@ -229,7 +230,8 @@ router.post("/generate", async (req, res) => {
 			// Merge token information with generated profile
 			characterProfile = {
 				...characterProfile,
-				token: cleanInput.token,
+				token,
+				twitter_handle,
 			};
 
 			// Validate required fields

@@ -246,6 +246,11 @@ const ChatInterface = () => {
 											<div>
 												<h3 className="text-lg font-semibold text-white">
 													{character.name}
+													{character.token && (
+														<Badge variant="outline" className="ml-2 font-mono text-xs">
+															${character.token.symbol}
+														</Badge>
+													)}
 												</h3>
 												<p className="text-sm text-white/70">
 													{character?.modelProvider}

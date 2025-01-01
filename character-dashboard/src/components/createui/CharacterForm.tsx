@@ -49,6 +49,7 @@ interface CharacterData {
 		symbol: string;
 		imageUrl: string;
 	} | null;
+	twitter_handle?: string;
 	autoGenerateAfterToken: boolean;
 }
 
@@ -137,24 +138,20 @@ export function CharacterForm({
 		addLog("loading", `Waiting for transaction confirmation... (${hash})`);
 
 		try {
-			// Wait for transaction receipt
 			const receipt = await waitForTransactionReceipt(config, {
 				hash: hash,
 			});
 
-			// Find the token creation event from the logs
-			// The token creation event should be the Transfer event from address(0)
 			const tokenCreationLog = receipt.logs.find(
 				(log) =>
-					// Look for Transfer event with 'from' address being zero address
 					log.topics[1] ===
 					"0x0000000000000000000000000000000000000000000000000000000000000000",
 			);
 
 			if (receipt.status === "success" && tokenCreationLog) {
-				// The new token address will be in the 'to' parameter of the Transfer event
 				const tokenAddress = `0x${tokenCreationLog.topics[2].slice(26)}`;
 
+				// Create token data object
 				const tokenData = {
 					address: tokenAddress,
 					transactionHash: hash,
@@ -163,10 +160,15 @@ export function CharacterForm({
 					imageUrl: `https://api.dicebear.com/7.x/shapes/svg?seed=${tokenAddress}`,
 				};
 
-				setCharacterData((prev) => ({
-					...prev,
-					token: tokenData,
-				}));
+				// Update state with token data
+				setCharacterData((prev) => {
+					const updated = {
+						...prev,
+						token: tokenData  // Set the token object directly
+					};
+					console.log("Updated character data:", updated);  // Debug log
+					return updated;
+				});
 
 				addLog("success", `Token created at ${tokenAddress}`);
 				return tokenData;
@@ -209,7 +211,6 @@ export function CharacterForm({
 			// Handle token approval if needed
 			if (!allowance) {
 				addLog("info", "Requesting token approval...");
-
 				const hash = await writeContract(config, {
 					address: PTOKEN_ADDRESS,
 					abi: PTOKEN_ABI,
@@ -217,7 +218,7 @@ export function CharacterForm({
 					args: [TOKEN_FACTORY_ADDRESS, CREATION_FEE],
 				});
 				await handleTxComplete(hash);
-				return; // Return after approval to let the next click handle creation
+				return null; // Return null after approval
 			}
 
 			addLog("loading", "Creating token...");
@@ -228,74 +229,27 @@ export function CharacterForm({
 				args: [
 					characterData.name,
 					characterData.name.slice(0, 4).toUpperCase(),
-					"helloworld", // Image URL will be generated after token creation
+					"helloworld",
 					characterData.description || `Token for ${characterData.name}`,
 				],
 			});
-			return await handleTxComplete(hash);
+
+			const tokenData = await handleTxComplete(hash);
+			console.log("Token creation completed with data:", tokenData); // Debug log
+			return tokenData;
 		} catch (err) {
 			console.error("Token creation error:", err);
-			const errorMessage =
-				err instanceof Error ? err.message : "Token creation failed";
-			if (errorMessage.includes("insufficient funds")) {
-				setError(
-					"Insufficient ETH for gas fees. Please add more ETH to your wallet.",
-				);
-			} else {
-				setError(errorMessage);
-			}
+			const errorMessage = err instanceof Error ? err.message : "Token creation failed";
+			setError(errorMessage);
 			addLog("error", errorMessage);
 			return null;
 		}
 	};
 
-	const generateCharacter = async () => {
-		if (!characterData.token) {
-			setError("Token must be created first");
-			return;
-		}
+	// Add a ref to track token data
+	const tokenDataRef = useRef(null);
 
-		addLog("loading", "Generating character details...");
-		setIsPending(true);
-
-		try {
-			const response = await fetch(
-				`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters/generate`,
-				{
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(characterData),
-				},
-			);
-
-			if (!response.ok) {
-				throw new Error(await response.text());
-			}
-
-			const data = await response.json();
-
-			if (data.success) {
-				setCharacterData((prev) => ({
-					...prev,
-					...data.data,
-				}));
-
-				addLog("success", "Character generated successfully");
-				onComplete(data.data);
-			} else {
-				throw new Error(data.error || "Character generation failed");
-			}
-		} catch (err) {
-			console.error("Generation error:", err);
-			const errorMessage =
-				err instanceof Error ? err.message : "Generation failed";
-			addLog("error", errorMessage);
-			setError(errorMessage);
-		} finally {
-			setIsPending(false);
-		}
-	};
-
+	// Update handleCreate
 	const handleCreate = async () => {
 		if (!characterData.name.trim()) {
 			setError("Name is required");
@@ -306,17 +260,143 @@ export function CharacterForm({
 
 		try {
 			const tokenData = await handleTokenCreation();
-			if (!tokenData) return;
+			console.log("Token creation result:", tokenData);
+			
+			if (!tokenData) {
+				console.log("Token creation failed or returned no data");
+				return;
+			}
 
-			if (characterData.autoGenerateAfterToken) {
+			// Store token data in ref
+			tokenDataRef.current = tokenData;
+
+			// Update state and wait for it using a Promise
+			await new Promise<void>((resolve) => {
+				setCharacterData(prev => {
+					const updated = {
+						...prev,
+						token: tokenData
+					};
+					console.log("Updating character data with token:", updated);
+					resolve(); // Resolve after state update
+					return updated;
+				});
+			});
+
+			// Add a small delay to ensure state is updated
+			await new Promise(resolve => setTimeout(resolve, 100));
+
+			// Use ref to verify token data
+			if (characterData.autoGenerateAfterToken && tokenDataRef.current) {
+				console.log("Proceeding with character generation, token data:", tokenDataRef.current);
 				await generateCharacter();
 			}
 		} catch (err) {
 			console.error("Creation error:", err);
-			const errorMessage =
-				err instanceof Error ? err.message : "Creation failed";
+			const errorMessage = err instanceof Error ? err.message : "Creation failed";
 			setError(errorMessage);
 			addLog("error", errorMessage);
+		}
+	};
+
+	// Update generateCharacter to use ref as backup
+	const generateCharacter = async () => {
+		// Check both state and ref for token data
+		const tokenData = characterData.token || tokenDataRef.current;
+		console.log("Current character data:", characterData);
+		console.log("Token data from state:", characterData.token);
+		console.log("Token data from ref:", tokenDataRef.current);
+
+		if (!tokenData) {
+			console.error("Token data missing at generation time");
+			setError("Token must be created first");
+			return;
+		}
+
+		if (!characterData.description) {
+			setError("Description is required before generating character");
+			return;
+		}
+
+		addLog("loading", "Generating character details...");
+		setIsPending(true);
+
+		try {
+			// Structure the payload exactly like the game form
+			const characterPayload = {
+				name: characterData.name,
+				description: characterData.description,
+				type: 'ai_character',
+				modelProvider: "openai",
+				settings: {
+					secrets: {},
+					voice: {
+						model: "en_US-male-medium"
+					}
+				},
+				// Structure token data as expected by server
+				token: {
+					address: tokenData.address,
+					name: tokenData.name,
+					symbol: tokenData.symbol,
+					transactionHash: tokenData.transactionHash,
+					imageUrl: tokenData.imageUrl
+				},
+				twitter_handle: characterData.twitter_handle || null,
+				theme: null,
+				goal: null,
+				antagonist: null
+			};
+
+			console.log("Sending payload:", characterPayload);
+
+			const response = await fetch(
+				`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters/generate`,
+				{
+					method: "POST",
+					headers: { 
+						"Content-Type": "application/json"
+					},
+					body: JSON.stringify(characterPayload),
+				},
+			);
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error("Server error:", errorText);
+				throw new Error(errorText);
+			}
+
+			const data = await response.json();
+			console.log("Response data:", data);
+
+			if (data.success) {
+				// Update local state with the response data
+				setCharacterData((prev) => ({
+					...prev,
+					...data.data,
+					// Convert flat token fields to nested token object for UI
+					token: data.data.token_address ? {
+						address: data.data.token_address,
+						name: data.data.token_name,
+						symbol: data.data.token_symbol,
+						imageUrl: data.data.token_image_url,
+						transactionHash: data.data.token_tx_hash
+					} : prev.token
+				}));
+
+				addLog("success", "Character generated successfully");
+				onComplete(data.data);
+			} else {
+				throw new Error(data.error || "Character generation failed");
+			}
+		} catch (err) {
+			console.error("Generation error:", err);
+			const errorMessage = err instanceof Error ? err.message : "Generation failed";
+			addLog("error", errorMessage);
+			setError(errorMessage);
+		} finally {
+			setIsPending(false);
 		}
 	};
 
@@ -387,6 +467,23 @@ export function CharacterForm({
 								/>
 							</div>
 						)}
+
+						<div>
+							<Label htmlFor="twitter">Twitter Handle</Label>
+							<div className="relative">
+								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+									@
+								</span>
+								<Input
+									id="twitter"
+									value={characterData.twitter_handle || ''}
+									onChange={(e) => handleInputChange("twitter_handle", e.target.value)}
+									placeholder="twitter_handle"
+									className="pl-8 bg-background"
+									disabled={isLoading}
+								/>
+							</div>
+						</div>
 
 						{error && (
 							<Alert variant="destructive">

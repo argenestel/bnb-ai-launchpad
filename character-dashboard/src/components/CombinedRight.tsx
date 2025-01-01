@@ -67,11 +67,11 @@ const CombinedRightPanel = ({ character }: CharacterFlowProps) => {
 										tokenFactoryABI={abi as Abi}
 										pTokenAddress={PTOKEN_ADDRESS}
 										pTokenABI={PTOKEN_ABI as Abi}
-										defaultTokenAddress={character?.evm_address as Address}
+										defaultTokenAddress={character?.token?.address as Address}
 										defaultTokenInfo={character?.token ? {
 											name: character.token.name,
-											symbol: character.token.symbol,
-											address: character.token.address as Address
+												symbol: character.token.symbol,
+												address: character.token.address as Address
 										} : undefined}
 									/>
 								</div>

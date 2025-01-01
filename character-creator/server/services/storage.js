@@ -211,10 +211,13 @@ class CharacterStorage {
 				goal: characterData.goal,
 				antagonist: characterData.antagonist,
 				ipfsHash: pinataResult.ipfsHash,
-				ipfsUrl: pinataResult.ipfsUrl,
-				evmAddress: wallet.address,
-				token: characterData.token,
-				twitter_handle: characterData.twitter_handle,
+				ipfs_url: pinataResult.ipfsUrl,
+				evm_address: wallet.address,
+				token_address: characterData.token?.address || null,
+				token_name: characterData.token?.name || null,
+				token_symbol: characterData.token?.symbol || null,
+				token_image_url: characterData.token?.imageUrl || null,
+				twitter_handle: characterData.twitter_handle || null
 			};
 		} catch (error) {
 			console.error("Error storing character:", error);
@@ -306,28 +309,28 @@ class CharacterStorage {
 	async getAllCharacters() {
 		try {
 			await this.initialize();
-
-			return await this.db.all(`
-                SELECT 
-                    id,
-                    name,
-                    description,
-                    type,
-                    theme,
-                    goal,
-                    antagonist,
-                    ipfs_url,
-                    evm_address,
-                    token_address,
-                    token_name,
-                    token_symbol,
-                    token_image_url,
-                    twitter_handle,
-                    created_at,
-                    updated_at
-                FROM character_storage
-                ORDER BY created_at DESC
-            `);
+			const characters = await this.db.all(`
+				SELECT 
+					id,
+					name,
+					description,
+					type,
+					theme,
+					goal,
+					antagonist,
+					ipfs_url,
+					evm_address,
+					token_address,
+					token_name,
+					token_symbol,
+					token_image_url,
+					twitter_handle,
+					created_at,
+					updated_at
+				FROM character_storage
+				ORDER BY created_at DESC
+			`);
+			return characters;
 		} catch (error) {
 			console.error("Error getting all characters:", error);
 			throw error;
@@ -362,28 +365,42 @@ class CharacterStorage {
 				ipfsUrl: pinataResult.ipfsUrl,
 			});
 
-			// Update database
+			// Update database with all fields including token information
 			await this.db.run(
 				`
-                UPDATE character_storage 
-                SET 
-                    description = ?,
-                    ipfs_hash = ?,
-                    ipfs_url = ?,
-                    local_file_path = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            `,
+				UPDATE character_storage 
+				SET 
+					description = ?,
+					ipfs_hash = ?,
+					ipfs_url = ?,
+					local_file_path = ?,
+					token_address = ?,
+					token_name = ?,
+					token_symbol = ?,
+					token_image_url = ?,
+					token_description = ?,
+					token_tx_hash = ?,
+					twitter_handle = ?,
+					updated_at = CURRENT_TIMESTAMP
+				WHERE id = ?
+				`,
 				[
 					updateData.description,
 					pinataResult.ipfsHash,
 					pinataResult.ipfsUrl,
 					localFile.path,
+					updateData.token?.address || existing.token_address,
+					updateData.token?.name || existing.token_name,
+					updateData.token?.symbol || existing.token_symbol,
+					updateData.token?.imageUrl || existing.token_image_url,
+					updateData.token?.description || existing.token_description,
+					updateData.token?.transactionHash || existing.token_tx_hash,
+					updateData.twitter_handle || existing.twitter_handle,
 					id,
 				],
 			);
 
-			return await this.getCharacterByName(updateData.name);
+			return await this.getCharacterByName(existing.name);
 		} catch (error) {
 			console.error("Error updating character:", error);
 			throw error;
