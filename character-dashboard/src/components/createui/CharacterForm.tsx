@@ -215,7 +215,7 @@ export function CharacterForm({
 					address: PTOKEN_ADDRESS,
 					abi: PTOKEN_ABI,
 					functionName: "approve",
-					args: [TOKEN_FACTORY_ADDRESS, CREATION_FEE],
+					args: [TOKEN_FACTORY_ADDRESS, CREATION_FEE * 10**18],
 				});
 				await handleTxComplete(hash);
 				return null; // Return null after approval
@@ -521,7 +521,7 @@ export function CharacterForm({
 										Current ETH Balance:{" "}
 										{ethBalance ? formatEther(ethBalance.value) : "0"} ETH
 									</div>
-									<div>Required PTOKEN: {CREATION_FEE.toString()} PTOKEN</div>
+									<div>Required AI Arcade Token: {CREATION_FEE.toString()} AI Arcade Token</div>
 									<div>Estimated Gas: ~{formatEther(MIN_ETH_BALANCE)} ETH</div>
 								</AlertDescription>
 							</Alert>
