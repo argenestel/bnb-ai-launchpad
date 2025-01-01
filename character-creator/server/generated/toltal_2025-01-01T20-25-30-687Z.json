@@ -157,11 +157,11 @@
     "Strategic"
   ],
   "token": {
-    "address": "0x20539f5bfe99e252fe5485135800a0f7e0a46cee",
+    "address": "0xa279eB501E56981aAF11bEA95A281A3FA9227bd6",
     "name": "toltal",
     "symbol": "TOLT",
     "transactionHash": "0x633bfcb0a38670a1ac9500d28ef8af0875cde4c4713f2fa9295cd638f6b3634a",
-    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0x20539f5bfe99e252fe5485135800a0f7e0a46cee"
+    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0xa279eB501E56981aAF11bEA95A281A3FA9227bd6"
   },
   "twitter_handle": "ty",
   "evmAddress": "0x661f05C1c52566Bf331C1DcC5bDD279B16C32806",

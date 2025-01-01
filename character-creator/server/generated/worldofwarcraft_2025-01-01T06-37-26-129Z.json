@@ -183,9 +183,9 @@
   "token": {
     "name": "WorldofWarcraft",
     "symbol": "WORL",
-    "address": "0x20539F5BFe99e252fe5485135800a0F7e0A46CEE",
+    "address": "0xa279eB501E56981aAF11bEA95A281A3FA9227bd6",
     "transactionHash": "0xa74aad451036d9f778b8c4192f0ea2937420f586b6facd4be1e02bd2691f716d",
-    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0x20539F5BFe99e252fe5485135800a0F7e0A46CEE"
+    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0xa279eB501E56981aAF11bEA95A281A3FA9227bd6"
   },
   "evmAddress": "0x3f2663bbfa1D7D5602c38f2352C8E1b3244f5C92",
   "ipfsHash": "QmUeFQgPnCzBqs5iV9kKtQWbpn3TC46Bq96G1g1RRo4Mm7",

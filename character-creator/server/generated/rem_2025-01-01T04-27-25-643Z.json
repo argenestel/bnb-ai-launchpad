@@ -160,9 +160,9 @@
   "token": {
     "name": "Rem",
     "symbol": "REM",
-    "address": "0x20539F5BFe99e252fe5485135800a0F7e0A46CEE",
+    "address": "0xa279eB501E56981aAF11bEA95A281A3FA9227bd6",
     "transactionHash": "0x02a6e8ea242711e4ac5992d9706bd91c1b975e968a3a6b723f1ae58b4ed16fbb",
-    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0x20539F5BFe99e252fe5485135800a0F7e0A46CEE"
+    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0xa279eB501E56981aAF11bEA95A281A3FA9227bd6"
   },
   "evmAddress": "0x5529a9dD719e539C8c99EAd051E2a1f9D7fa875e",
   "ipfsHash": "QmZhUsrPeDAxZCATECVCTxXXR67FCHYCFsFwxJWERihBQJ",
