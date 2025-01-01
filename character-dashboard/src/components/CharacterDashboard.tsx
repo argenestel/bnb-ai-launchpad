@@ -215,7 +215,7 @@ const CharacterDashboard = () => {
   const fetchCharacters = async () => {
     try {
       setLoading(true);
-      const response = await fetch("${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters");
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters`);
       if (!response.ok) throw new Error("Failed to fetch characters");
       const data = await response.json();
       setCharacters(data.characters);
