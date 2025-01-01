@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -18,13 +18,17 @@ import {
   Star,
   Sparkles,
   Gamepad2,
+  Users,
+  Activity,
+  BarChart3,
+  ChevronRight,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Navbar from "@/components/Navbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 
 interface Character {
   id: string;
@@ -84,24 +88,54 @@ const shortenAddress = (address: string | undefined) => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 };
 
+interface StatCardProps {
+  title: string;
+  value: string;
+  icon: React.ComponentType<{ className?: string }>;
+  trend?: number;
+}
+
+const StatCard = ({ title, value, icon: Icon, trend }: StatCardProps) => (
+  <Card>
+    <CardContent className="p-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-2xl font-bold">{value}</p>
+            {trend && (
+              <Badge variant={trend > 0 ? "default" : "destructive"} className="text-xs">
+                {trend > 0 ? "+" : ""}{trend}%
+              </Badge>
+            )}
+          </div>
+        </div>
+        <div className="p-3 bg-primary/10 rounded-full">
+          <Icon className="h-5 w-5 text-primary" />
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
 const CharacterCard = ({
   character,
   featured = false,
   onDelete,
   onNavigate,
 }: CharacterCardProps) => {
-  const { avatarUrl, loading: avatarLoading } = useCharacterAvatar(
-    character.name,
-  );
+  const { avatarUrl, loading: avatarLoading } = useCharacterAvatar(character.name);
+  const [interactions] = useState(Math.floor(Math.random() * 1000)); // Simulated data
+  const [rating] = useState(4 + Math.random()); // Simulated data
 
   if (featured) {
     return (
-      <Card className="border-2">
+      <Card className="border-2 bg-gradient-to-br from-primary/5 to-background">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <div className="relative">
-                <Avatar className="h-24 w-24 ring-2 ring-offset-2">
+                <Avatar className="h-24 w-24 ring-2 ring-primary ring-offset-2">
                   {avatarLoading ? (
                     <div className="animate-pulse bg-muted h-full w-full rounded-full" />
                   ) : (
@@ -111,31 +145,52 @@ const CharacterCard = ({
                       className="object-cover"
                     />
                   )}
-                  <AvatarFallback className="text-2xl">
+                  <AvatarFallback className="text-2xl bg-primary/20">
                     {character.name[0]}
                   </AvatarFallback>
                 </Avatar>
                 <span className="absolute -top-2 -right-2">
-                  <Star className="h-8 w-8" />
+                  <Star className="h-8 w-8 text-primary fill-primary" />
                 </span>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <CardTitle className="text-2xl">{character.name}</CardTitle>
-                  <Badge variant="secondary">Featured</Badge>
+                  <Badge variant="secondary" className="bg-primary/20">Featured</Badge>
                 </div>
                 <CardDescription className="text-base">
                   Most interactive AI character
                 </CardDescription>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    {interactions} interactions
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-primary text-primary" />
+                    {rating.toFixed(1)} rating
+                  </div>
+                </div>
               </div>
             </div>
-            <Button
-              onClick={() => onNavigate(`/chat/${character.name}`)}
-              className="gap-2"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Start Chat
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={() => onNavigate(`/chat/${character.name}`)}
+                className="w-full gap-2"
+                size="lg"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Start Chat
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => onNavigate(`/edit/${character.name}`)}
+                className="w-full gap-2"
+              >
+                <Edit className="h-4 w-4" />
+                Edit Character
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -143,9 +198,23 @@ const CharacterCard = ({
             <p className="text-muted-foreground mt-2 text-lg">
               {character.description}
             </p>
-            <Badge variant="outline" className="font-mono">
-              {shortenAddress(character.evm_address)}
-            </Badge>
+            <div className="flex items-center gap-4">
+              <Badge variant="outline" className="font-mono bg-primary/5">
+                {shortenAddress(character.evm_address)}
+              </Badge>
+              {character.token?.address && (
+                <Badge variant="outline" className="font-mono bg-primary/5">
+                  Token: {shortenAddress(character.token.address)}
+                </Badge>
+              )}
+            </div>
+            <div className="pt-4">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Engagement Score</span>
+                <span className="font-medium">78%</span>
+              </div>
+              <Progress value={78} className="h-2" />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -153,10 +222,10 @@ const CharacterCard = ({
   }
 
   return (
-    <Card className="flex flex-col transition-shadow duration-300 group">
+    <Card className="flex flex-col transition-all duration-300 hover:shadow-lg hover:border-primary/50 group">
       <CardHeader>
         <div className="flex items-center space-x-4">
-          <Avatar className="h-16 w-16 ring-1 ring-offset-1">
+          <Avatar className="h-16 w-16 ring-1 ring-primary/20 ring-offset-1 transition-all duration-300 group-hover:ring-primary/50">
             {avatarLoading ? (
               <div className="animate-pulse bg-muted h-full w-full rounded-full" />
             ) : (
@@ -166,7 +235,7 @@ const CharacterCard = ({
                 className="object-cover"
               />
             )}
-            <AvatarFallback className="text-lg">
+            <AvatarFallback className="text-lg bg-primary/10">
               {character.name[0]}
             </AvatarFallback>
           </Avatar>
@@ -175,28 +244,38 @@ const CharacterCard = ({
             <CardDescription className="line-clamp-2 mt-1">
               {character.description}
             </CardDescription>
+            <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {interactions}
+              </div>
+              <div className="flex items-center gap-1">
+                <Star className="h-3 w-3" />
+                {rating.toFixed(1)}
+              </div>
+            </div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <Badge variant="outline" className="font-mono">
+        <Badge variant="outline" className="font-mono bg-primary/5">
           {shortenAddress(character.evm_address)}
         </Badge>
       </CardContent>
-      <CardFooter className="flex justify-end gap-2 mt-auto pt-4 border-t">
+      <CardFooter className="flex justify-between gap-2 mt-auto pt-4 border-t">
         <Button
           variant="ghost"
-          size="icon"
+          className="flex-1 group-hover:bg-primary/10"
           onClick={() => onNavigate(`/chat/${character.name}`)}
-          title="Chat with character"
         >
-          <MessageCircle className="h-4 w-4" />
+          <MessageCircle className="h-4 w-4 mr-2" />
+          Chat
         </Button>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onNavigate(`/edit/${character.name}`)}
-          title="Edit character"
+          className="group-hover:bg-primary/10"
         >
           <Edit className="h-4 w-4" />
         </Button>
@@ -204,7 +283,7 @@ const CharacterCard = ({
           variant="ghost"
           size="icon"
           onClick={() => onDelete(character.name)}
-          title="Delete character"
+          className="group-hover:text-destructive"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -390,19 +469,53 @@ const CharacterDashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 space-y-8">
         <Navbar />
-        <div className="flex justify-between items-center">
+        
+        <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
             <p className="text-muted-foreground mt-2 text-lg">
               Manage your AI characters and games
             </p>
           </div>
           <div className="flex gap-4">
+            <Button variant="outline" onClick={() => navigate("/games/create")}>
+              <Gamepad2 className="mr-2 h-4 w-4" />
+              Create Game
+            </Button>
             <Button onClick={() => navigate("/create")}>
               <Plus className="mr-2 h-4 w-4" />
               Create Character
             </Button>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total Characters"
+            value={characters.length.toString()}
+            icon={Users}
+            trend={12}
+          />
+          <StatCard
+            title="Total Games"
+            value={games.length.toString()}
+            icon={Gamepad2}
+            trend={8}
+          />
+          <StatCard
+            title="Total Interactions"
+            value={(characters.length * 150).toString()}
+            icon={Activity}
+            trend={24}
+          />
+          <StatCard
+            title="Engagement Rate"
+            value="78%"
+            icon={BarChart3}
+            trend={5}
+          />
         </div>
 
         {error && (
@@ -413,28 +526,39 @@ const CharacterDashboard = () => {
 
         {loading ? (
           <div className="flex items-center justify-center h-96">
-            <Loader2 className="h-12 w-12 animate-spin" />
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
           </div>
         ) : characters.length === 0 && games.length === 0 ? (
           <Card className="flex flex-col items-center justify-center h-96 text-center border-2 border-dashed">
             <CardHeader>
-              <Sparkles className="h-12 w-12 mb-4" />
+              <Sparkles className="h-12 w-12 mb-4 text-primary" />
               <CardTitle className="text-2xl">No Content Yet</CardTitle>
               <CardDescription className="text-lg">
                 Get started by creating your first AI character or game
               </CardDescription>
             </CardHeader>
-            <CardFooter>
+            <CardFooter className="flex gap-4">
+              <Button variant="outline" onClick={() => navigate("/games/create")}>
+                <Gamepad2 className="mr-2 h-4 w-4" />
+                Create Game
+              </Button>
               <Button onClick={() => navigate("/create")}>
+                <Plus className="mr-2 h-4 w-4" />
                 Create Character
               </Button>
             </CardFooter>
           </Card>
         ) : (
           <Tabs defaultValue="characters" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="characters">Characters</TabsTrigger>
-              <TabsTrigger value="games">Games</TabsTrigger>
+            <TabsList className="grid w-full max-w-[400px] grid-cols-2 mb-8">
+              <TabsTrigger value="characters" className="gap-2">
+                <Users className="h-4 w-4" />
+                Characters
+              </TabsTrigger>
+              <TabsTrigger value="games" className="gap-2">
+                <Gamepad2 className="h-4 w-4" />
+                Games
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="characters">
@@ -449,18 +573,27 @@ const CharacterDashboard = () => {
                     />
                   )}
 
-                  <Separator className="my-12" />
+                  {characters.length > 1 && (
+                    <>
+                      <div className="flex justify-between items-center my-8">
+                        <h2 className="text-2xl font-semibold">All Characters</h2>
+                        <Button variant="ghost" className="gap-2">
+                          View All <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {characters.slice(1).map((character) => (
-                      <CharacterCard
-                        key={character.id}
-                        character={character}
-                        onDelete={handleDelete}
-                        onNavigate={navigate}
-                      />
-                    ))}
-                  </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {characters.slice(1).map((character) => (
+                          <CharacterCard
+                            key={character.id}
+                            character={character}
+                            onDelete={handleDelete}
+                            onNavigate={navigate}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </TabsContent>
@@ -477,18 +610,27 @@ const CharacterDashboard = () => {
                     />
                   )}
 
-                  <Separator className="my-12" />
+                  {games.length > 1 && (
+                    <>
+                      <div className="flex justify-between items-center my-8">
+                        <h2 className="text-2xl font-semibold">All Games</h2>
+                        <Button variant="ghost" className="gap-2">
+                          View All <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {games.slice(1).map((game) => (
-                      <GameCard
-                        key={game.id}
-                        game={game}
-                        onDelete={handleDelete}
-                        onNavigate={navigate}
-                      />
-                    ))}
-                  </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {games.slice(1).map((game) => (
+                          <GameCard
+                            key={game.id}
+                            game={game}
+                            onDelete={handleDelete}
+                            onNavigate={navigate}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </TabsContent>
