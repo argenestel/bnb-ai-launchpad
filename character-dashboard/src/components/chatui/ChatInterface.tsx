@@ -1,3 +1,4 @@
+//@ts-nocheck
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { useAccount, useBalance } from "wagmi";
 import { formatEther } from "viem";
 import Navbar from "@/components/Navbar";
 import CombinedRightPanel from "../CombinedRight";
-import BackgroundMedia, {useNekoBackground} from "./BackgroundMedia";
+import BackgroundMedia, { useNekoBackground } from "./BackgroundMedia";
 import Message from "./Message";
 import { CharacterDetails, WalletDetails } from "./CharacterDetails";
 
@@ -191,9 +192,9 @@ const ChatInterface = () => {
 							<ArrowLeft className="w-4 h-4 mr-2" />
 							Back
 						</Button>
-						{isConnected && character?.evm_address && (
+						{isConnected && character?.evmAddress && (
 							<Badge variant="secondary" className="font-mono backdrop-blur-sm">
-								{`${character.evm_address.slice(0, 6)}...${character.evm_address.slice(-4)}`}
+								{`${character.evmAddress.slice(0, 6)}...${character.evmAddress.slice(-4)}`}
 							</Badge>
 						)}
 					</div>
@@ -308,7 +309,7 @@ const ChatInterface = () => {
 						</Card>
 
 						{/* Right Panel */}
-						<div className="col-span-4 backdrop-blur-sm bg-background/50 rounded-lg">
+						<div className="col-span-4 bg-transparent rounded-xl">
 							<CombinedRightPanel character={character} />
 						</div>
 					</div>

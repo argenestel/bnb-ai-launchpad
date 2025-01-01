@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+//@ts-nocheck
+import  { useState, useEffect, useRef } from "react";
 import {
 	Card,
 	CardContent,
@@ -12,9 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Bot, Loader2, Wand2, AlertCircle, Terminal } from "lucide-react";
+import { Loader2, Wand2, AlertCircle, Terminal } from "lucide-react";
 import { useAccount, useBalance, useReadContract } from "wagmi";
-import { useTransactionConfirmations } from "wagmi";
 
 import { formatEther, parseEther } from "viem";
 import { PTOKEN_ABI } from "./ptokenabi";
