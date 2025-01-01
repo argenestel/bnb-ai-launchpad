@@ -59,7 +59,7 @@ const ChatInterface = () => {
 	const fetchCharacter = async () => {
 		try {
 			const response = await fetch(
-				`http://localhost:3000/characters/${characterName}`,
+				`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters/${characterName}`,
 			);
 			if (!response.ok) throw new Error("Character not found");
 			const data = await response.json();
@@ -101,7 +101,7 @@ const ChatInterface = () => {
 
 		try {
 			const response = await fetch(
-				`http://localhost:3000/chat/${character.name}`,
+				`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/chat/${character.name}`,
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },

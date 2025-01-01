@@ -51,7 +51,7 @@ const CharacterWallet = ({ characterName }) => {
 		const fetchWallet = async () => {
 			try {
 				const response = await fetch(
-					`http://localhost:3000/characters/${characterName}/wallet`,
+					`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters/${characterName}/wallet`,
 				);
 				if (!response.ok) throw new Error("Failed to fetch wallet");
 				const data = await response.json();

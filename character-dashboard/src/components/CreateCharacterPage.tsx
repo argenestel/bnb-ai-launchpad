@@ -291,7 +291,7 @@ const handleComplete = async (data: CharacterData) => {
 			]);
 
 			const response = await fetch(
-				"http://localhost:3000/characters/generate",
+				"${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters/generate",
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -358,7 +358,7 @@ const handleComplete = async (data: CharacterData) => {
 				"Integrating all systems",
 			]);
 
-			const response = await fetch("http://localhost:3000/characters", {
+			const response = await fetch("${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(characterData),

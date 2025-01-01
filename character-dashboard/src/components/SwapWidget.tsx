@@ -1,5 +1,5 @@
 //@ts-nocheck
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { formatEther, parseEther } from "viem";
 import {
 	useAccount,
