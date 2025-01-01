@@ -1,11 +1,9 @@
-//@ts-nocheck
-import React, { useState } from "react";
+import  { useState } from "react";
 import { Link } from "react-router-dom";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
 	NavigationMenu,
 	NavigationMenuItem,
-	NavigationMenuLink,
 	NavigationMenuList,
 	navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
@@ -76,11 +74,6 @@ const Navbar = () => {
 				{/* Connect Button */}
 				<div className="flex flex-1 items-center justify-end">
 					<ConnectButton
-						className="scale-90 md:scale-100"
-						accountStatus={{
-							smallScreen: "avatar",
-							largeScreen: "full",
-						}}
 					/>
 				</div>
 			</div>

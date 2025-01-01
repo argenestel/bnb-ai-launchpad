@@ -1,4 +1,3 @@
-//@ts-nocheck
 import "@rainbow-me/rainbowkit/styles.css";
 import {
 	getDefaultConfig,
@@ -18,7 +17,7 @@ export const config = getDefaultConfig({
 });
 //0xD80DC42a1c0AD05CCF2f95Ee7831B4225b356e7D
 //TokenFactory v1
-export const EVMProvider = ({ children }) => {
+export const EVMProvider = ({ children }: { children: React.ReactNode }) => {
 	return (
 		<WagmiProvider config={config}>
 			<QueryClientProvider client={queryClient}>

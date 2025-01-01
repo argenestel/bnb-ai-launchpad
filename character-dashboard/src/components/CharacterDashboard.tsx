@@ -1,5 +1,4 @@
-//@ts-nocheck
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -25,7 +24,23 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Navbar from "@/components/Navbar";
 
-const useCharacterAvatar = (name) => {
+interface Character {
+  id: string;
+  name: string;
+  description: string;
+  evm_address: string;
+}
+
+interface CharacterCardProps {
+  character: Character;
+  featured?: boolean;
+  onDelete: (name: string) => void;
+  onNavigate: (path: string) => void;
+}
+
+
+
+const useCharacterAvatar = (name: unknown) => {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +48,7 @@ const useCharacterAvatar = (name) => {
     const fetchAvatar = async () => {
       try {
         const response = await fetch(
-          `https://nekos.best/api/v2/search?query=${encodeURIComponent(name)}&type=1`,
+          `https://nekos.best/api/v2/search?query=${encodeURIComponent(name as string)}&type=1`,
         );
         const data = await response.json();
         if (data.results && data.results.length > 0) {
@@ -58,12 +73,12 @@ const CharacterCard = ({
   featured = false,
   onDelete,
   onNavigate,
-}) => {
+}: CharacterCardProps) => {
   const { avatarUrl, loading: avatarLoading } = useCharacterAvatar(
     character.name,
   );
 
-  const shortenAddress = (address) => {
+  const shortenAddress = (address: string ) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
@@ -79,7 +94,7 @@ const CharacterCard = ({
                     <div className="animate-pulse bg-muted h-full w-full rounded-full" />
                   ) : (
                     <AvatarImage
-                      src={avatarUrl}
+                      src={avatarUrl!}
                       alt={character.name}
                       className="object-cover"
                     />
@@ -134,7 +149,7 @@ const CharacterCard = ({
               <div className="animate-pulse bg-muted h-full w-full rounded-full" />
             ) : (
               <AvatarImage
-                src={avatarUrl}
+                src={avatarUrl!}
                 alt={character.name}
                 className="object-cover"
               />
@@ -187,13 +202,14 @@ const CharacterCard = ({
 };
 
 const CharacterDashboard = () => {
-  const [characters, setCharacters] = useState([]);
+  const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchCharacters();
+    setError(null);
   }, []);
 
   const fetchCharacters = async () => {
@@ -204,14 +220,15 @@ const CharacterDashboard = () => {
       const data = await response.json();
       setCharacters(data.characters);
     } catch (err) {
-      setError(err.message);
+      console.log(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (characterName) => {
+  const handleDelete = async (characterName: string) => {
     // Implement delete functionality
+    console.log(characterName);
     await fetchCharacters();
   };
 
@@ -282,7 +299,7 @@ const CharacterDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {characters.slice(1).map((character) => (
                 <CharacterCard
-                  key={character.id}
+                  key={character!.id}
                   character={character}
                   onDelete={handleDelete}
                   onNavigate={navigate}

@@ -1,5 +1,4 @@
-//@ts-nocheck
-import React from "react";
+
 import {
 	ReactFlow,
 	Background,
@@ -11,7 +10,23 @@ import "@xyflow/react/dist/style.css";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 
-const CharacterFlow = ({ character }) => {
+
+interface CharacterFlowProps {
+	character: {
+	  name: string;
+	  description: string;
+	  evm_address: string;
+	  modelProvider?: string;
+	  settings?: { voice?: { model: string } };
+	  clients?: string[];
+	  topics?: string[];
+	  knowledge?: string[];
+	  adjectives?: string[];
+	};
+  }
+  
+  const CharacterFlow = ({ character }: CharacterFlowProps) => {
+
 	// Single comprehensive node with optimized width
 	const initialNodes = [
 		{
@@ -95,7 +110,6 @@ const CharacterFlow = ({ character }) => {
 				}}
 				minZoom={0.5}
 				maxZoom={1.2}
-				defaultZoom={0.85}
 				attributionPosition="bottom-right"
 				nodesDraggable={false}
 				nodesConnectable={false}
@@ -105,7 +119,6 @@ const CharacterFlow = ({ character }) => {
 				preventScrolling={true}
 			>
 				<Background
-					variant="dots"
 					gap={16}
 					size={1}
 					className="bg-background"
