@@ -6,9 +6,9 @@ import { PTOKEN_ABI } from "./ptokenabi";
 import { TOKEN_FACTORY_ABI } from "./abi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 function App() {
-  const TOKEN_FACTORY_ADDRESS = "0xa279eB501E56981aAF11bEA95A281A3FA9227bd6";
+  const TOKEN_FACTORY_ADDRESS = "0x811460efdcB4d335443a306568AEF6ed4DeA65Dd";
 
-  const PTOKEN_ADDRESS = "0xA3E2ea7628B215Ea2dB60a146027642579632643";
+  const PTOKEN_ADDRESS = "0x206De6ac6b1EBa897788cC0FE89A47365c214504";
   return (
     <div className="min-h-screen dark bg-background">
       <main>

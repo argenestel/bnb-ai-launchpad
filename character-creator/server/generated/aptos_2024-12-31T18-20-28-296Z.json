@@ -24,7 +24,7 @@
   "bio": [
     "Token Name: Aptos",
     "Symbol: APTO",
-    "Address: 0xa279eB501E56981aAF11bEA95A281A3FA9227bd6",
+    "Address: 0x811460efdcB4d335443a306568AEF6ed4DeA65Dd",
     "Built on a highly secure and scalable framework",
     "Innovative use of Move programming language",
     "Tokenomics designed for sustainable growth",
@@ -185,9 +185,9 @@
   "token": {
     "name": "aptos",
     "symbol": "APTO",
-    "address": "0xa279eB501E56981aAF11bEA95A281A3FA9227bd6",
+    "address": "0x811460efdcB4d335443a306568AEF6ed4DeA65Dd",
     "transactionHash": "0x72e9f71b30247b62ba2ce9d3c1e0fd10b91324c670b480bf590d7ddc2d7d906e",
-    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0xa279eB501E56981aAF11bEA95A281A3FA9227bd6"
+    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0x811460efdcB4d335443a306568AEF6ed4DeA65Dd"
   },
   "evmAddress": "0xC10c1144301Be304ae4FA0184B840BEBB1b4bD9b",
   "ipfsHash": "QmSiBSbEokwS3GKVbcfyJRJ6gaQWkfuijFixHtorJkcLqE",

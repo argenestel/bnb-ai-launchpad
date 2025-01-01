@@ -160,11 +160,11 @@
     "Thoughtful"
   ],
   "token": {
-    "address": "0xa279eb501e56981aaf11bea95a281a3fa9227bd6",
+    "address": "0x811460efdcB4d335443a306568AEF6ed4DeA65Dd",
     "name": "Rem",
     "symbol": "REM",
     "transactionHash": "0xc43474c1cdd1f972904374a9309848d9f571439963e2e28107d1eaade9090ec9",
-    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0xa279eb501e56981aaf11bea95a281a3fa9227bd6"
+    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0x811460efdcB4d335443a306568AEF6ed4DeA65Dd"
   },
   "twitter_handle": "rezerorem",
   "evmAddress": "0x188Db8f8b6723353b6083FcF3C00852eB5b83591",

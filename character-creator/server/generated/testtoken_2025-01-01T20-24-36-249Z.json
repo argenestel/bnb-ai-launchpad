@@ -173,11 +173,11 @@
     "visionary"
   ],
   "token": {
-    "address": "0xa279eB501E56981aAF11bEA95A281A3FA9227bd6",
+    "address": "0x811460efdcB4d335443a306568AEF6ed4DeA65Dd",
     "name": "testtoken",
     "symbol": "TEST",
     "transactionHash": "0xa9ae3bf78a5b7baf541644d56dd550ca0ad5a86332ce37ac6d1d5a35b086b572",
-    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0xa279eB501E56981aAF11bEA95A281A3FA9227bd6"
+    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0x811460efdcB4d335443a306568AEF6ed4DeA65Dd"
   },
   "twitter_handle": null,
   "evmAddress": "0x329D84C327027ae46fdFC717790239f5cFb453BE",

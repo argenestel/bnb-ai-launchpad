@@ -27,8 +27,8 @@ interface CharacterFlowProps {
 }
 
 const CombinedRightPanel = ({ character }: CharacterFlowProps) => {
-	const TOKEN_FACTORY_ADDRESS = "0xa279eB501E56981aAF11bEA95A281A3FA9227bd6" as Address;
-	const PTOKEN_ADDRESS = "0xA3E2ea7628B215Ea2dB60a146027642579632643" as Address;
+	const TOKEN_FACTORY_ADDRESS = "0x811460efdcB4d335443a306568AEF6ed4DeA65Dd" as Address;
+	const PTOKEN_ADDRESS = "0x206De6ac6b1EBa897788cC0FE89A47365c214504" as Address;
 
 	return (
 		<div className="relative h-full rounded-xl bg-transparent">

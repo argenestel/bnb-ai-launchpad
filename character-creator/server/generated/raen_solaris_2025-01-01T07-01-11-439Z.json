@@ -326,9 +326,9 @@
   "token": {
     "name": "gameone",
     "symbol": "GAME",
-    "address": "0xa279eB501E56981aAF11bEA95A281A3FA9227bd6",
+    "address": "0x811460efdcB4d335443a306568AEF6ed4DeA65Dd",
     "transactionHash": "0x0c765b8a598388ac2d18cf2f7f6951622a0579cf78a2585327983f2c8b5c9017",
-    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0xa279eB501E56981aAF11bEA95A281A3FA9227bd6"
+    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0x811460efdcB4d335443a306568AEF6ed4DeA65Dd"
   },
   "evmAddress": "0x871E436AAD9d8924F2110C22876735416d1c4E25",
   "ipfsHash": "Qme2SPrVKiYRNV1fMnC345BdsnQBKA226ERXsEiVwvUQFT",
