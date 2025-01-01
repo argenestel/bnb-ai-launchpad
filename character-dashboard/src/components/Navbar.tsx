@@ -8,7 +8,7 @@ import {
 	navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Twitter } from "lucide-react";
 
 const Navbar = () => {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -33,6 +33,17 @@ const Navbar = () => {
 					Create
 				</Link>
 			</NavigationMenuItem>
+			<NavigationMenuItem>
+				<a
+					href="https://docs.agentarcade.xyz"
+					target="_blank"
+					rel="noopener noreferrer"
+					className={navigationMenuTriggerStyle() + " text-sm font-medium"}
+					onClick={() => setIsMobileMenuOpen(false)}
+				>
+					Docs
+				</a>
+			</NavigationMenuItem>
 		</>
 	);
 
@@ -43,8 +54,8 @@ const Navbar = () => {
 				<div className="mr-4 md:mr-8">
 					<Link to="/" className="flex items-center space-x-2">
 						<h1 className="text-lg md:text-xl font-bold">
-							<span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600">
-								Agents AI
+							<span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-200 via-gray-500 to-gray-200">
+								Agent Arcade
 							</span>
 						</h1>
 					</Link>
@@ -71,10 +82,17 @@ const Navbar = () => {
 					)}
 				</Button>
 
-				{/* Connect Button */}
-				<div className="flex flex-1 items-center justify-end">
-					<ConnectButton
-					/>
+				{/* Social and Connect Button */}
+				<div className="flex flex-1 items-center justify-end space-x-4">
+					<a
+						href="https://twitter.com/AgentArcade"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="hover:text-primary transition-colors"
+					>
+						<Twitter className="h-5 w-5" />
+					</a>
+					<ConnectButton />
 				</div>
 			</div>
 

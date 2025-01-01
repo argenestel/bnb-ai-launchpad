@@ -21,11 +21,21 @@ export interface Settings {
 export interface CharacterData {
 	name: string;
 	description: string;
-	background: string;
-	modelProvider: ModelProvider;
-	traits: string[];
-	voice: Voice;
-	settings: Settings;
+	background?: string;
+	modelProvider?: string;
+	twitter_handle?: string;
+	traits?: string[];
+	voice?: {
+		model: string;
+		speed?: number;
+		pitch?: number;
+	};
+	settings?: {
+		allowMultimodal?: boolean;
+		memoryEnabled?: boolean;
+		responseStyle?: string;
+	};
+	token?: TokenData;
 }
 
 export interface Message {
@@ -66,23 +76,4 @@ export interface TypeInfo {
 		options?: string[];
 		placeholder?: string;
 	}[];
-}
-
-export interface CharacterData {
-	name: string;
-	description: string;
-	background: string;
-	ModelProvider: string;
-	traits: string[];
-	token?: TokenData;
-	Voice: {
-		model: string;
-		speed: number;
-		pitch: number;
-	};
-	Settings: {
-		allowMultimodal: boolean;
-		memoryEnabled: boolean;
-		responseStyle: string;
-	};
 }

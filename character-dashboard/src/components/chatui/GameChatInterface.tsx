@@ -1,4 +1,3 @@
-//@ts-nocheck
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -270,10 +269,10 @@ const GameChatInterface = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-12 gap-6 flex-1">
+          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
             {/* Game Chat Card */}
-            <Card className="col-span-8 flex-1 flex flex-col min-h-0 relative overflow-hidden backdrop-blur-sm bg-background/30">
-              <CardHeader className="relative z-10">
+            <Card className="col-span-8 flex flex-col h-[calc(100vh-12rem)] relative overflow-hidden backdrop-blur-sm bg-background/30">
+              <CardHeader className="relative z-10 shrink-0">
                 <CardTitle>
                   {game && (
                     <div className="flex items-center gap-4">
@@ -299,10 +298,10 @@ const GameChatInterface = () => {
               <CardContent className="flex-1 flex flex-col min-h-0 p-4 relative z-10">
                 <ScrollArea
                   ref={scrollAreaRef}
-                  className="flex-1 pr-4 mask-linear-gradient"
+                  className="flex-1 pr-4"
                   type="always"
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-4 pb-4">
                     {messages.map((msg, idx) => (
                       <Message
                         key={idx}
@@ -323,7 +322,7 @@ const GameChatInterface = () => {
                   </div>
                 </ScrollArea>
 
-                <div className="mt-4 flex gap-2">
+                <div className="mt-4 flex gap-2 shrink-0">
                   <Input
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
@@ -348,7 +347,7 @@ const GameChatInterface = () => {
             </Card>
 
             {/* Right Panel */}
-            <div className="col-span-4 bg-transparent rounded-xl">
+            <div className="col-span-4 h-[calc(100vh-12rem)] overflow-hidden">
               <CombinedRightPanel 
                 character={game} 
                 isGame={true} 

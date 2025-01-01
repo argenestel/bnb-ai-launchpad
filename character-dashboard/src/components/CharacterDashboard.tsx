@@ -22,6 +22,7 @@ import {
   Activity,
   BarChart3,
   ChevronRight,
+  Twitter,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ interface Character {
   description: string;
   evm_address: string;
   type: 'game_character' | 'ai_character';
+  twitter_handle?: string;
   token?: {
     address: string;
   };
@@ -157,6 +159,16 @@ const CharacterCard = ({
                 <div className="flex items-center gap-3">
                   <CardTitle className="text-2xl">{character.name}</CardTitle>
                   <Badge variant="secondary" className="bg-primary/20">Featured</Badge>
+                  {character.twitter_handle && (
+                    <a
+                      href={`https://twitter.com/${character.twitter_handle}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-primary transition-colors"
+                    >
+                      <Twitter className="h-5 w-5" />
+                    </a>
+                  )}
                 </div>
                 <CardDescription className="text-base">
                   Most interactive AI character
@@ -240,7 +252,19 @@ const CharacterCard = ({
             </AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle>{character.name}</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle>{character.name}</CardTitle>
+              {character.twitter_handle && (
+                <a
+                  href={`https://twitter.com/${character.twitter_handle}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                >
+                  <Twitter className="h-4 w-4" />
+                </a>
+              )}
+            </div>
             <CardDescription className="line-clamp-2 mt-1">
               {character.description}
             </CardDescription>
@@ -483,7 +507,7 @@ const CharacterDashboard = () => {
 
             <Button onClick={() => navigate("/create")}>
               <Plus className="mr-2 h-4 w-4" />
-              Create AI
+              Create Agent
             </Button>
           </div>
         </div>
@@ -538,7 +562,7 @@ const CharacterDashboard = () => {
 
               <Button onClick={() => navigate("/create")}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create
+                Create Agent
               </Button>
             </CardFooter>
           </Card>
@@ -547,11 +571,11 @@ const CharacterDashboard = () => {
             <TabsList className="grid w-full max-w-[400px] grid-cols-2 mb-8">
               <TabsTrigger value="characters" className="gap-2">
                 <Users className="h-4 w-4" />
-                Characters
+                AI Agents
               </TabsTrigger>
               <TabsTrigger value="games" className="gap-2">
                 <Gamepad2 className="h-4 w-4" />
-                Games
+                AI Games
               </TabsTrigger>
             </TabsList>
 

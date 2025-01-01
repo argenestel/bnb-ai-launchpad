@@ -49,6 +49,7 @@ class CharacterStorage {
                     token_image_url TEXT,
                     token_description TEXT,
                     token_tx_hash TEXT,
+                    twitter_handle TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
@@ -175,8 +176,9 @@ class CharacterStorage {
                     token_symbol,
                     token_image_url,
                     token_description,
-                    token_tx_hash
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    token_tx_hash,
+                    twitter_handle
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
 				[
 					characterData.name,
@@ -196,6 +198,7 @@ class CharacterStorage {
 					characterData.token?.imageUrl || null,
 					characterData.token?.description || null,
 					characterData.token?.transactionHash || null,
+					characterData.twitter_handle || null,
 				],
 			);
 
@@ -211,6 +214,7 @@ class CharacterStorage {
 				ipfsUrl: pinataResult.ipfsUrl,
 				evmAddress: wallet.address,
 				token: characterData.token,
+				twitter_handle: characterData.twitter_handle,
 			};
 		} catch (error) {
 			console.error("Error storing character:", error);
@@ -318,6 +322,7 @@ class CharacterStorage {
                     token_name,
                     token_symbol,
                     token_image_url,
+                    twitter_handle,
                     created_at,
                     updated_at
                 FROM character_storage

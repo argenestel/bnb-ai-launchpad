@@ -159,7 +159,8 @@ router.post("/generate", async (req, res) => {
 			clients,
 			settings,
 			plugins,
-			token, // Token information from frontend
+			token,
+			twitter_handle,
 			...otherParams
 		} = req.body;
 
@@ -194,20 +195,12 @@ router.post("/generate", async (req, res) => {
 		// Clean and prepare input parameters
 		const cleanInput = {
 			name: name.trim(),
-			description:
-				description.trim() ||
-				`An AI character with its own token (${token.symbol})`,
-			token: {
-				name: token.name,
-				symbol: token.symbol,
-				address: token.address,
-				transactionHash: token.transactionHash,
-				imageUrl: token.imageUrl,
-			},
+			description: description.trim(),
 			...(modelProvider && { modelProvider }),
 			...(clients && { clients }),
 			...(settings && { settings }),
 			...(plugins && { plugins }),
+			...(twitter_handle && { twitter_handle }),
 			...otherParams,
 		};
 

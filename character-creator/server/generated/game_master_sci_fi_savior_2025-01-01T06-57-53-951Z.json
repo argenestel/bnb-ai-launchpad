@@ -354,9 +354,9 @@
   "token": {
     "name": "G-one",
     "symbol": "G-ON",
-    "address": "0xb5e00954b00cdd9511ea38d15f6bec4bb0d83972",
+    "address": "0x20539F5BFe99e252fe5485135800a0F7e0A46CEE",
     "transactionHash": "0x888d3f615578453db677f4a90216a0de1805753ad0ec7c6cb961d1bcbcd52292",
-    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0xb5e00954b00cdd9511ea38d15f6bec4bb0d83972"
+    "imageUrl": "https://api.dicebear.com/7.x/shapes/svg?seed=0x20539F5BFe99e252fe5485135800a0F7e0A46CEE"
   },
   "evmAddress": "0x27945927553172Fcbb72090212Dcf6aCf1a3FF6C",
   "ipfsHash": "QmbCu2oQFtMLCQcaWTabawQ6B7XLQ8dzdELeUN8PwsaCpU",
