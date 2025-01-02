@@ -35,7 +35,7 @@ const Navbar = () => {
 			</NavigationMenuItem>
 			<NavigationMenuItem>
 				<a
-					href="https://docs.agentarcade.xyz"
+					href="https://agentarcade.gitbook.io/agentarcade"
 					target="_blank"
 					rel="noopener noreferrer"
 					className={navigationMenuTriggerStyle() + " text-sm font-medium"}
@@ -85,7 +85,7 @@ const Navbar = () => {
 				{/* Social and Connect Button */}
 				<div className="flex flex-1 items-center justify-end space-x-4">
 					<a
-						href="https://twitter.com/AgentArcade"
+						href="https://x.com/AI_AgentArcade"
 						target="_blank"
 						rel="noopener noreferrer"
 						className="hover:text-primary transition-colors"
