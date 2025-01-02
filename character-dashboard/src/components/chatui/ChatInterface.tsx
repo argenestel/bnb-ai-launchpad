@@ -58,27 +58,37 @@ const ChatInterface = () => {
 	// API interactions
 	const fetchCharacter = async () => {
 		try {
+			console.log("Fetching character:", characterName);
 			const response = await fetch(
 				`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters/${characterName}`,
 			);
 			if (!response.ok) throw new Error("Character not found");
 			const data = await response.json();
+			console.log("Received character data:", data.data);
 			setCharacter(data.data);
 
-			setMessages([
-				{
-					role: "assistant",
-					content: `Hello! I'm ${data.data.name}. ${
-						data.data.greeting ||
-						`I specialize in ${data.data.topics.slice(0, 3).join(", ")}. How can I assist you today?`
-					}`,
-					metadata: {
-						timestamp: new Date().toISOString(),
-						topics: data.data.topics.slice(0, 3),
-					},
+			// Check if we have the required data
+			if (!data.data || !data.data.name) {
+				throw new Error("Invalid character data received");
+			}
+
+			// Construct greeting message safely
+			const greeting = data.data.greeting || '';
+			const specialization = data.data.topics?.length 
+				? `I specialize in ${data.data.topics.slice(0, 3).join(", ")}`
+				: '';
+			const initialMessage = {
+				role: "assistant",
+				content: `Hello! I'm ${data.data.name}. ${greeting || specialization}. How can I assist you today?`,
+				metadata: {
+					timestamp: new Date().toISOString(),
+					topics: data.data.topics?.slice(0, 3) || [],
 				},
-			]);
+			};
+			console.log("Setting initial message:", initialMessage);
+			setMessages([initialMessage]);
 		} catch (err) {
+			console.error("Error in fetchCharacter:", err);
 			setError(err.message);
 		}
 	};
@@ -105,17 +115,17 @@ const ChatInterface = () => {
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						message: inputMessage,
-						userId: userWalletAddress,
-						conversationHistory: messages,
-						context: {
-							userBalance: userBalance ? formatEther(userBalance.value) : "0",
-							characterBalance: characterBalance
-								? formatEther(characterBalance.value)
-								: "0",
-						},
-					}),
+						body: JSON.stringify({
+							message: inputMessage,
+							userId: userWalletAddress,
+							conversationHistory: messages,
+							context: {
+								userBalance: userBalance ? formatEther(userBalance.value) : "0",
+								characterBalance: characterBalance
+									? formatEther(characterBalance.value)
+									: "0",
+							},
+						}),
 				},
 			);
 
