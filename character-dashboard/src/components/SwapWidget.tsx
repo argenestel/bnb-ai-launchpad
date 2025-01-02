@@ -1,12 +1,11 @@
 //@ts-nocheck
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { formatEther, parseEther } from "viem";
 import {
 	useAccount,
 	useReadContract,
 	useWalletClient,
 	usePublicClient,
-	useChainId,
 } from "wagmi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,15 +27,16 @@ const SwapWidget = ({
 	tokenFactoryABI,
 	pTokenAddress,
 	pTokenABI,
+	defaultTokenAddress,
+	defaultTokenInfo
 }) => {
 	const [amount, setAmount] = useState("1"); // Default to 1 token
-	const [selectedToken, setSelectedToken] = useState("");
+	const [selectedToken, setSelectedToken] = useState(defaultTokenAddress || "");
 	const [isSelling, setIsSelling] = useState(false);
 	const [error, setError] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [txHash, setTxHash] = useState("");
 
-	const chainId = useChainId();
 	const { address } = useAccount();
 	const { data: walletClient } = useWalletClient();
 	const publicClient = usePublicClient();
@@ -47,6 +47,13 @@ const SwapWidget = ({
 		abi: tokenFactoryABI,
 		functionName: "getAllMemeTokens",
 	});
+
+	// Set default token when it becomes available
+	useEffect(() => {
+		if (defaultTokenAddress) {
+			setSelectedToken(defaultTokenAddress);
+		}
+	}, [defaultTokenAddress, tokens]);
 
 	// Read allowances for both PTOKEN and selected token
 	const { data: ptokenAllowance, refetch: refetchPTokenAllowance } =
@@ -68,12 +75,12 @@ const SwapWidget = ({
 			watch: true,
 		});
 
-	// Calculate expected output
+	// Calculate expected output with safe BigInt conversion
 	const { data: expectedOutput } = useReadContract({
 		address: tokenFactoryAddress,
 		abi: tokenFactoryABI,
 		functionName: isSelling ? "calculateSellReturn" : "calculateBuyTokenCost",
-		args: selectedToken && amount ? [selectedToken, BigInt(amount)] : undefined,
+		args: selectedToken && amount ? [selectedToken, BigInt(Math.floor(Number(amount)))] : undefined,
 		enabled: !!selectedToken && !!amount,
 	});
 
@@ -109,8 +116,8 @@ const SwapWidget = ({
 			setIsLoading(true);
 			setError("");
 
-			// Convert amount to BigInt for contract interaction
-			const tokenAmount = BigInt(amount);
+			// Convert amount to BigInt safely
+			const tokenAmount = BigInt(Math.floor(Number(amount)));
 
 			// Check and handle approvals
 			if (!isSelling) {
@@ -163,7 +170,7 @@ const SwapWidget = ({
 		(!ptokenAllowance || ptokenAllowance < expectedOutput);
 
 	const needsTokenApproval =
-		isSelling && amount && (!tokenAllowance || tokenAllowance < BigInt(amount));
+		isSelling && amount && (!tokenAllowance || tokenAllowance < BigInt(Math.floor(Number(amount))));
 
 	const needsApproval = needsPTokenApproval || needsTokenApproval;
 
@@ -175,12 +182,31 @@ const SwapWidget = ({
 			return;
 		}
 
-		// Ensure it's a valid positive integer
-		const parsedValue = parseInt(value);
+		// Ensure it's a valid positive number
+		const parsedValue = parseFloat(value);
 		if (!isNaN(parsedValue) && parsedValue > 0) {
-			setAmount(parsedValue.toString());
+			// Limit to 18 decimal places to prevent overflow
+			const limitedValue = Math.min(parsedValue, 1e18);
+			setAmount(limitedValue.toString());
 		}
 	};
+
+	// Combine default token with fetched tokens
+	const allTokens = React.useMemo(() => {
+		if (!tokens) return [];
+		if (!defaultTokenInfo) return tokens;
+		
+		// Check if default token is already in the list
+		const defaultTokenExists = tokens.some(t => t.tokenAddress === defaultTokenInfo.address);
+		if (defaultTokenExists) return tokens;
+
+		// Add default token to the list
+		return [{
+			tokenAddress: defaultTokenInfo.address,
+			name: defaultTokenInfo.name,
+			symbol: defaultTokenInfo.symbol
+		}, ...tokens];
+	}, [tokens, defaultTokenInfo]);
 
 	return (
 		<Card className="w-full max-w-md mx-auto">
@@ -213,7 +239,7 @@ const SwapWidget = ({
 								<SelectValue placeholder="Select a token" />
 							</SelectTrigger>
 							<SelectContent>
-								{tokens?.map((token) => (
+								{allTokens?.map((token) => (
 									<SelectItem
 										key={token.tokenAddress}
 										value={token.tokenAddress}
@@ -235,11 +261,11 @@ const SwapWidget = ({
 							disabled={isLoading}
 							step="1"
 							min="1"
+							max="1000000000000000000"
 							className="bg-background"
 						/>
 						<p className="text-xs text-muted-foreground">
-							Enter the number of tokens you want to trade (e.g., 1000 for 1000
-							tokens)
+							Enter the number of tokens you want to trade (max: 1e18)
 						</p>
 					</div>
 

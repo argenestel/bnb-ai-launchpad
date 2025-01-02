@@ -1,0 +1,68 @@
+{
+  "name": "Sir Eldric",
+  "description": "A sprawling fantasy realm filled with dense magical forests, treacherous mountain ranges, and ancient ruins steeped in mystery.",
+  "type": "game_character",
+  "theme": "fantasy",
+  "goal": "rescue princess",
+  "antagonist": "lord clomonus",
+  "settings": {
+    "secrets": {},
+    "voice": {
+      "model": "en_US-male-medium"
+    },
+    "isGame": true,
+    "gameDetails": {
+      "theme": "fantasy",
+      "goal": "rescue princess",
+      "antagonist": "lord clomonus",
+      "world": {
+        "description": "A sprawling fantasy realm filled with dense magical forests, treacherous mountain ranges, and ancient ruins steeped in mystery.",
+        "atmosphere": "Epic and adventurous, with a mix of danger and wonder.",
+        "locations": [
+          {
+            "name": "Elderwood Forest",
+            "description": "A dense and mysterious forest filled with towering ancient trees, glowing mushrooms, and hidden dangers.",
+            "special_actions": [],
+            "items": [],
+            "npcs": []
+          },
+          {
+            "name": "The Obsidian Keep",
+            "description": "A dark and ominous fortress where Lord Clomonus is said to reside, guarding the captured princess.",
+            "special_actions": [],
+            "items": [],
+            "npcs": []
+          },
+          {
+            "name": "Dragon's Peak",
+            "description": "A perilous mountain summit rumored to be home to a powerful yet unpredictable dragon who may aid Sir Eldric or destroy him.",
+            "special_actions": [],
+            "items": [],
+            "npcs": []
+          }
+        ]
+      },
+      "gameplay": {
+        "available_actions": [],
+        "item_combinations": [],
+        "core_mechanics": [],
+        "quick_wins": [],
+        "hidden_elements": []
+      },
+      "victory": {
+        "main_condition": "rescue princess",
+        "alternate_paths": [],
+        "bonus_achievements": [],
+        "failure_states": []
+      },
+      "time_mechanics": {
+        "total_time": "5 minutes",
+        "key_moments": [],
+        "pressure_elements": []
+      }
+    }
+  },
+  "evmAddress": "0xCf8389B12708C9aac9fAc7AFe0f9c3fea6652072",
+  "ipfsHash": "QmejEjk1KEJBYx89P21uyDvaxCeN8K9dBxSoYuCjTvjUKN",
+  "ipfsUrl": "https://gateway.pinata.cloud/ipfs/QmejEjk1KEJBYx89P21uyDvaxCeN8K9dBxSoYuCjTvjUKN"
+}
