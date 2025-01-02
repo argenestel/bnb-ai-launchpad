@@ -170,6 +170,5 @@ dist
 
 # IntelliJ based IDEs
 .idea
-data/character_storage.db
 # Finder (MacOS) folder config
 .DS_Store
