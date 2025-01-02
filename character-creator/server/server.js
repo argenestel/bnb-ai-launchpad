@@ -18,7 +18,16 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+	origin: [
+		'https://app.agentarcade.fun',
+		'http://localhost:3000',
+		'http://localhost:5173'
+	],
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+	allowedHeaders: ['Content-Type', 'Authorization'],
+	credentials: true
+}));
 
 // Initialize database
 await db.initialize();
@@ -57,9 +66,37 @@ app.get("/health", (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
 	console.error("Unhandled error:", err);
-	res.status(500).json({
-		error: "Internal server error",
-		details: process.env.NODE_ENV === "development" ? err.message : undefined,
+	
+	// Handle CORS errors
+	if (err.name === 'CORSError') {
+		return res.status(403).json({
+			error: "CORS error",
+			message: "Cross-Origin Request blocked",
+			details: process.env.NODE_ENV === "development" ? err.message : undefined
+		});
+	}
+	
+	// Handle database errors
+	if (err.code && err.code.startsWith('SQLITE_')) {
+		return res.status(500).json({
+			error: "Database error",
+			message: "Error accessing the database",
+			details: process.env.NODE_ENV === "development" ? err.message : undefined
+		});
+	}
+	
+	// Default error response
+	res.status(err.status || 500).json({
+		error: err.message || "Internal server error",
+		details: process.env.NODE_ENV === "development" ? err.stack : undefined,
+	});
+});
+
+// 404 handler for undefined routes
+app.use((req, res) => {
+	res.status(404).json({
+		error: "Not Found",
+		message: `Cannot ${req.method} ${req.url}`
 	});
 });
 

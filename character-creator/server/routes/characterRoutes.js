@@ -390,31 +390,25 @@ router.get("/", async (req, res) => {
 // Get character by name
 router.get("/:name", async (req, res) => {
 	try {
-		const character = await characterStorage.getCharacterByName(
-			req.params.name,
-		);
+		const characterName = decodeURIComponent(req.params.name);
+		console.log(`[Character Route] GET request for character: ${characterName}`);
+		console.log(`[Character Route] Origin:`, req.headers.origin);
+		console.log(`[Character Route] Headers:`, req.headers);
 
+		const character = await characterStorage.getCharacterByName(characterName);
+		
 		if (!character) {
-			return res.status(404).json({
-				error: "Character not found",
-			});
+			console.log(`[Character Route] Character not found: ${characterName}`);
+			return res.status(404).json({ error: "Character not found" });
 		}
 
-		// Get character memories
-		const memories = await db.getMemories(character.name, "system");
-
-		res.json({
-			success: true,
-			data: {
-				...character,
-				memories,
-			},
-		});
+		console.log(`[Character Route] Successfully retrieved character: ${characterName}`);
+		res.json({ success: true, data: character });
 	} catch (error) {
-		console.error("Error getting character:", error);
+		console.error("[Character Route] Error:", error);
 		res.status(500).json({
-			error: "Failed to retrieve character",
-			details: error.message,
+			error: "Failed to get character",
+			details: process.env.NODE_ENV === "development" ? error.message : undefined
 		});
 	}
 });

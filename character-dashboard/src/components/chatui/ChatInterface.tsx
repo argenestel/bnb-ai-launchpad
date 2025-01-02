@@ -59,18 +59,38 @@ const ChatInterface = () => {
 	const fetchCharacter = async () => {
 		try {
 			console.log("Fetching character:", characterName);
-			const response = await fetch(
-				`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters/${characterName}`,
-			);
-			if (!response.ok) throw new Error("Character not found");
+			const encodedName = encodeURIComponent(characterName || '');
+			const apiUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/characters/${encodedName}`;
+			console.log("Fetching from URL:", apiUrl);
+
+			const response = await fetch(apiUrl, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					// Add any additional headers your API requires
+				},
+				credentials: 'include', // Include credentials if needed
+			});
+
+			if (response.status === 502) {
+				throw new Error("Server is temporarily unavailable. Please try again later.");
+			}
+			
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error("API Error Response:", errorText);
+				throw new Error(`Character not found (Status: ${response.status})`);
+			}
+
 			const data = await response.json();
 			console.log("Received character data:", data.data);
-			setCharacter(data.data);
-
-			// Check if we have the required data
+			
 			if (!data.data || !data.data.name) {
+				console.error("Invalid data structure:", data);
 				throw new Error("Invalid character data received");
 			}
+
+			setCharacter(data.data);
 
 			// Construct greeting message safely
 			const greeting = data.data.greeting || '';
@@ -89,12 +109,13 @@ const ChatInterface = () => {
 			setMessages([initialMessage]);
 		} catch (err) {
 			console.error("Error in fetchCharacter:", err);
-			setError(err.message);
+			const errorMessage = err instanceof Error ? err.message : "Failed to fetch character";
+			setError(errorMessage);
 		}
 	};
 
 	const handleSendMessage = async () => {
-		if (!inputMessage.trim() || !isConnected) return;
+		if (!inputMessage.trim() || !isConnected || !character) return;
 
 		const newMessage = {
 			role: "user",
@@ -110,28 +131,46 @@ const ChatInterface = () => {
 		setLoading(true);
 
 		try {
-			const response = await fetch(
-				`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/chat/${character.name}`,
-				{
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({
-							message: inputMessage,
-							userId: userWalletAddress,
-							conversationHistory: messages,
-							context: {
-								userBalance: userBalance ? formatEther(userBalance.value) : "0",
-								characterBalance: characterBalance
-									? formatEther(characterBalance.value)
-									: "0",
-							},
-						}),
-				},
-			);
+			const encodedName = encodeURIComponent(character.name);
+			const apiUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/chat/${encodedName}`;
+			console.log("Sending message to URL:", apiUrl);
 
-			if (!response.ok) throw new Error("Failed to get response");
+			const response = await fetch(apiUrl, {
+				method: "POST",
+				headers: { 
+					"Content-Type": "application/json",
+					// Add any additional headers your API requires
+				},
+				credentials: 'include', // Include credentials if needed
+				body: JSON.stringify({
+					message: inputMessage,
+					userId: userWalletAddress,
+					conversationHistory: messages,
+					context: {
+						userBalance: userBalance ? formatEther(userBalance.value) : "0",
+						characterBalance: characterBalance
+							? formatEther(characterBalance.value)
+							: "0",
+					},
+				}),
+			});
+
+			if (response.status === 502) {
+				throw new Error("Server is temporarily unavailable. Please try again later.");
+			}
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error("API Error Response:", errorText);
+				throw new Error(`Failed to get response (Status: ${response.status})`);
+			}
 
 			const data = await response.json();
+			if (!data.message) {
+				console.error("Invalid response data:", data);
+				throw new Error("Invalid response from server");
+			}
+
 			setMessages((prev) => [
 				...prev,
 				{
@@ -145,7 +184,9 @@ const ChatInterface = () => {
 				},
 			]);
 		} catch (err) {
-			setError(err.message);
+			console.error("Error in handleSendMessage:", err);
+			const errorMessage = err instanceof Error ? err.message : "Failed to send message";
+			setError(errorMessage);
 		} finally {
 			setLoading(false);
 		}
