@@ -1,4 +1,4 @@
-# Spheron Agent Platform
+
 
 A platform for creating, managing, and interacting with AI-powered game characters and agents.
 
